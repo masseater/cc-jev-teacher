@@ -8,6 +8,7 @@
   "dependencies": {
     "@typesafe-ai/sdk": "0.6.0",
     "cc-hooks-ts": "2.1.281",
+    "fast-jev-compaction": "^0.4.1",
     "js-yaml": "^5.0.0"
   },
   "devDependencies": {

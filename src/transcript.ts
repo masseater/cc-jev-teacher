@@ -1,4 +1,6 @@
-import { closeSync, fstatSync, openSync, readSync } from "node:fs";
+import { closeSync, fstatSync, openSync, readFileSync, readSync } from "node:fs";
+
+import type { Message } from "fast-jev-compaction";
 
 type Entry = {
   type?: string;
@@ -65,7 +67,11 @@ export const entriesOf = (transcriptPath: string) => {
         continue;
       }
       rest = data.subarray(0, cut + 1);
-      const lines = data.subarray(cut + 1).toString("utf8").split("\n").reverse();
+      const lines = data
+        .subarray(cut + 1)
+        .toString("utf8")
+        .split("\n")
+        .reverse();
       for (const line of lines) {
         if (!line) continue;
         const entry = JSON.parse(line) as Entry;
@@ -110,3 +116,53 @@ export const searchedOf = (toolUses: Array<ToolUse>) =>
       (part.name === "Skill" && SEARCH_SKILLS.test(part.input?.skill ?? "")) ||
       (part.name === "Bash" && SEARCH_COMMANDS.test(part.input?.command ?? "")),
   );
+
+type Block = {
+  type?: string;
+  text?: string;
+  id?: string;
+  name?: string;
+  input?: Record<string, unknown>;
+  tool_use_id?: string;
+  content?: unknown;
+  is_error?: boolean;
+};
+
+const blocksOf = (content: unknown): Array<Block> =>
+  typeof content === "string"
+    ? [{ type: "text", text: content }]
+    : Array.isArray(content)
+      ? content
+      : [];
+
+// Every message of the session, in the shape fast-jev-compaction takes.
+export const messagesOf = (transcriptPath: string): Array<Message> =>
+  readFileSync(transcriptPath, "utf8")
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => JSON.parse(line) as Entry)
+    .filter((entry) => (entry.type === "user" && !entry.isMeta) || entry.type === "assistant")
+    .map((entry) => {
+      const blocks = blocksOf(entry.message?.content);
+      return {
+        role: entry.type === "user" ? "user" : "assistant",
+        text: blocks
+          .filter((block) => block.type === "text")
+          .map((block) => block.text ?? "")
+          .join("\n"),
+        toolUses: blocks
+          .filter((block) => block.type === "tool_use")
+          .map((block) => ({
+            tool_use_id: block.id ?? "",
+            tool: block.name ?? "",
+            input: block.input ?? {},
+          })),
+        toolResults: blocks
+          .filter((block) => block.type === "tool_result")
+          .map((block) => ({
+            tool_use_id: block.tool_use_id ?? "",
+            text: textOf(block.content),
+            isError: block.is_error ?? false,
+          })),
+      };
+    });

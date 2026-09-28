@@ -17,7 +17,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import { check } from './engine.mjs';
 
 const MAX_FIELD = 400; // 1項目の上限。辞書に長文を入れさせない

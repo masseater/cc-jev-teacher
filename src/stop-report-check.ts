@@ -2,7 +2,7 @@ import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
 import { clientOf, hasApiKey, THRESHOLD } from "./hook.ts";
-import { aiJapaneseQuestion, aiJapaneseReason } from "./japanese.ts";
+import { aiJapanese } from "./japanese.ts";
 import { entriesOf, instructionOf, searchedOf, toolUsesOf } from "./transcript.ts";
 
 const questions = {
@@ -47,7 +47,7 @@ const questions = {
   english: noul(
     "Is most of the report's prose written in English rather than Japanese? Code, identifiers, file paths, commands, URLs, and quoted UI text do not count.",
   ),
-  aiJapanese: aiJapaneseQuestion,
+  aiJapanese: aiJapanese.question,
 };
 
 // Asked again on a retry after feedback; only the checks built on these run then.
@@ -115,7 +115,7 @@ const checks: Record<string, { reason: string; failed?: (verdict: Verdict) => bo
       "応答の地の文が英語になっています。日本語で書き直してください。コード・識別子・ファイルパス・UI 文言の引用は原文のままでかまいません。",
     failed: (verdict) => verdict.hit("english") && !verdict.hit("askedEnglish"),
   },
-  aiJapanese: { reason: aiJapaneseReason },
+  aiJapanese: { reason: aiJapanese.reason },
   verbose: {
     reason:
       "報告が冗長です。指示された各項目を今どうしたかと、動作確認をどこでどうしたかだけを、簡潔に書き直してください。作業の経緯・調べ方・後片付けの手順は書かないでください。",
@@ -130,7 +130,9 @@ const memoryWritesOf = (toolUses: ReturnType<typeof toolUsesOf>) =>
         (part.name === "Write" || part.name === "Edit") &&
         /\/memory\//.test(part.input?.file_path ?? ""),
     )
-    .map((part) => `${part.input?.file_path}\n${part.input?.content ?? part.input?.new_string ?? ""}`)
+    .map(
+      (part) => `${part.input?.file_path}\n${part.input?.content ?? part.input?.new_string ?? ""}`,
+    )
     .join("\n\n");
 
 const hook = defineHook({
@@ -157,7 +159,9 @@ const hook = defineHook({
     };
     const failed = Object.entries(checks)
       .filter(([key]) => !input.stop_hook_active || key in retryQuestions)
-      .filter(([key, check]) => (check.failed ? check.failed(verdict) : verdict.hit(key as Question)))
+      .filter(([key, check]) =>
+        check.failed ? check.failed(verdict) : verdict.hit(key as Question),
+      )
       .map(([, check]) => `- ${check.reason}`);
     if (failed.length === 0) return context.success();
     return context.blockingError(failed.join("\n"));

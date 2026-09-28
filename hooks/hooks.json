@@ -7,7 +7,7 @@
           {
             "type": "command",
             "command": "bun \"${CLAUDE_PLUGIN_ROOT}/src/script-edit.ts\"",
-            "timeout": 30
+            "timeout": 60
           }
         ]
       },
@@ -17,7 +17,7 @@
           {
             "type": "command",
             "command": "bun \"${CLAUDE_PLUGIN_ROOT}/src/existing-solution.ts\"",
-            "timeout": 30
+            "timeout": 60
           }
         ]
       },
@@ -27,7 +27,7 @@
           {
             "type": "command",
             "command": "bun \"${CLAUDE_PLUGIN_ROOT}/src/config-relax.ts\"",
-            "timeout": 30
+            "timeout": 60
           }
         ]
       }
@@ -38,18 +38,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun \"${CLAUDE_PLUGIN_ROOT}/src/skill-review.ts\"",
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "bun \"${CLAUDE_PLUGIN_ROOT}/src/natural-japanese.ts\"",
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "bun \"${CLAUDE_PLUGIN_ROOT}/src/doc-review.ts\"",
-            "timeout": 30
+            "command": "bun \"${CLAUDE_PLUGIN_ROOT}/src/document-review.ts\"",
+            "timeout": 60
           }
         ]
       }
@@ -60,7 +50,12 @@
           {
             "type": "command",
             "command": "bun \"${CLAUDE_PLUGIN_ROOT}/src/stop-report-check.ts\"",
-            "timeout": 30
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "command": "bun \"${CLAUDE_PLUGIN_ROOT}/src/stop-session-check.ts\"",
+            "timeout": 60
           }
         ]
       }

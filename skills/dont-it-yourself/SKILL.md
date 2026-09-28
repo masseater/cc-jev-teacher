@@ -5,39 +5,13 @@ description: 新しい処理やツールを書き始める前に使う。使え�
 
 # 自前で作らない
 
-## 書く前に探す
+## 考え方
 
-- ライブラリやフレームワーク、ランタイム、リポジトリにすでにある処理は、自分で書かずにそれを使う。
-- RFCやW3C、ECMA、ISOなどの規格や、広く使われている形式を扱う処理は、ライブラリがあるものと思って探す。規格の名前と番号、形式の名前、扱うデータの名前でnpmを検索し、今もメンテナンスされているか、型定義があるか、依存が少ないかを見る。
-- 既存の関数をそのまま包むだけのラッパーは作らない。
-- 既存のもので足りないときは、足りない部分だけを書く。拡張用のAPIやオプションがあれば、それを使って足す。
+ライブラリやフレームワーク、ランタイム、リポジトリにすでにある処理は、自分で書かずにそれを使う。既存の関数をそのまま包むだけのラッパーも作らない。
 
-## よく使うもの
+## 手順
 
-よくある場面と、そこで使うもの。ここにない場面では、Effectのモジュール、リポジトリにすでに入っている依存、npmの順に探す。
-
-- 配列、オブジェクト、文字列のユーティリティ（`groupBy`、`chunk`、`debounce`、deep merge、深い等価比較）: `es-toolkit`
-- 外から入ってくる値の解析と検証（URL、メールアドレス、日付の文字列、JSONの形）: `Schema`
-- 環境変数や設定値の読み込み: `Config`
-- 秘密の値を持ち回り、ログに出さないようにする: `Redacted`
-- 日付、時刻、タイムゾーン、期間の計算と整形: `DateTime`、`Duration`
-- リトライとバックオフ: `Effect.retry` と `Schedule.exponential`、`Schedule.jittered`
-- cron式の解析と次の実行時刻: `Cron`
-- base64やhexのエンコードとデコード: `Encoding`
-- UUID、乱数、ランダムな文字列: `crypto.randomUUID`、`Random`、`Encoding.randomHex`
-- ハッシュ、署名、暗号化: `crypto.subtle`
-- 同時実行数の制限、ロック、キュー、キャッシュ: `Semaphore`、`Queue`、`Cache`
-- 値の形による分岐: `Match`
-- YAMLの読み書き: `yaml`
-- Markdownの解析と変換: `remark`
-- シェルに渡す文字列のエスケープ: `shell-quote`
-- CLIの引数とサブコマンドの解析: `citty`
-- 外部HTTPのモック: `msw`
-- SQLの組み立てとマイグレーション: `drizzle-orm`
-- 認証、セッション、パスキー、APIキー: `better-auth`
-- TOTP: `otpauth`
-- サーバーから取ってきたデータの取得とキャッシュ: `@tanstack/react-query`
-- フォームの状態と入力チェック: `@tanstack/react-form`
-- テーブルの並べ替え、絞り込み、ページ送り: `@tanstack/react-table`
-- 長いリストの仮想スクロール: `@tanstack/react-virtual`
-- Reactでのdebounce、throttle、rate limit: `@tanstack/react-pacer`
+1. [references/libraries.md](references/libraries.md) に、その場面で使うものが載っていないかを見る。
+2. 載っていなければ、Effectのモジュール、リポジトリにすでに入っている依存、npmの順に探す。RFCやW3C、ECMA、ISOなどの規格や、広く使われている形式を扱う処理は、ライブラリがあるものと思って、規格の名前と番号、形式の名前、扱うデータの名前でnpmを検索する。
+3. 候補は、今もメンテナンスされているか、型定義があるか、依存が少ないかで選ぶ。
+4. 既存のもので足りないときは、足りない部分だけを書く。拡張用のAPIやオプションがあれば、それを使って足す。

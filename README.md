@@ -6,17 +6,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757.svg)](https://code.claude.com/docs/en/plugins)
 
-- [Why](#why)
-- [Install](#install)
-- [Demo](#demo)
-- [What It Does](#what-it-does)
-- [How It Triggers](#how-it-triggers)
-- [Workflow](#workflow)
-- [Compatibility](#compatibility)
-- [Configuration](#configuration)
-- [Contributing](#contributing)
-- [License](#license)
-
 ## Why
 
 When you hand Claude a task and walk away, it often stops early: it reports "done, but not deployed", it edits code with `sed -i`, it switches a lint rule off to make the error go away, or it writes three paragraphs of "how I did it" instead of saying what changed. You only find out when you read the report, and then you have to instruct it again.
@@ -40,7 +29,7 @@ Ask Claude to edit a file with a script, and the `script-edit` hook stops it:
 
 ```text
 ⏺ Bash(sed -i "" "s/1/2/" app.ts)
-  ⎿  PreToolUse:Bash hook error: [node ".../cc-jev-teacher/src/script-edit.ts"]:
+  ⎿  PreToolUse:Bash hook error: [bun ".../cc-jev-teacher/src/script-edit.ts"]:
      数ファイル程度の編集にスクリプトを使っています。Edit / Write ツールで直接編集してください。
 ```
 
@@ -55,33 +44,9 @@ Stop hook feedback:
 
 ## What It Does
 
-| Hook | Blocks when Claude… |
-| --- | --- |
-| 🛠️ `script-edit` | edits source files with `sed -i`, heredocs, or scripts instead of Edit / Write |
-| 🔍 `existing-solution` | starts building something new without first searching for an existing library, CLI, service, or skill |
-| 🔒 `config-relax` | disables or loosens a setting, lint rule, check, or limit you did not ask to loosen |
-| 🧩 `skill-review` | writes a `SKILL.md` that lacks `name` / `description`, references missing files, explains reasons nobody needs, carries filler, or copies other docs instead of pointing to them |
-| 📚 `doc-review` | writes things into `README.md`, `AGENTS.md`, or `CLAUDE.md` that anyone could learn by reading the code |
-| 🗾 `natural-japanese` | writes Markdown or text in AI-sounding Japanese such as 「〜は〜で、〜ではない」 |
-| 📝 `stop-report-check` | reports with work unfinished or unverified, test data left behind, a symptom-only fix, no recurrence prevention, guessed numbers, needless permission requests, unchecked external facts, AI-sounding Japanese, English prose, or too many words |
+The hooks check Claude's tool calls, the documents it writes, and its reports, and block with feedback when one falls short, such as editing a file with `sed -i`. TypeSafe Jev makes every judgment; the questions live under `src/`, and the feedback points Claude to the skills under `skills/`.
 
-Every judgment is made by TypeSafe Jev. The hooks only decide locally whether a tool call is worth sending (for example, whether a file is a `SKILL.md`).
-
-It also ships three skills:
-
-- 📦 `dont-it-yourself` — look for an existing library, CLI, or service before writing code; `existing-solution` points Claude here
-- 📏 `measure-everything` — never swallow failures, and back every claim about causes, frequency, or latency with measured numbers
-- 🗾 `dead-cliche-writing` — find the clichés AI brings into Japanese and rewrite them plainly, with its checker in `vendor/dead-cliche`; vendored from [BoxPistols/ux-writing-dead-cliche](https://github.com/BoxPistols/ux-writing-dead-cliche) (MIT), and `natural-japanese` / `stop-report-check` point Claude here
-
-## How It Triggers
-
-| Event | Matcher | Hook |
-| --- | --- | --- |
-| `PreToolUse` | `Bash` | `script-edit` |
-| `PreToolUse` | `Write` | `existing-solution` |
-| `PreToolUse` | `Write` \| `Edit` | `config-relax` |
-| `PostToolUse` | `Write` \| `Edit` | `skill-review` (`SKILL.md` only), `natural-japanese` (`.md` / `.mdx` / `.txt` only), `doc-review` (`README.md` / `AGENTS.md` / `CLAUDE.md` only) |
-| `Stop` | | `stop-report-check` |
+`dead-cliche-writing` and its checker in `vendor/dead-cliche` come from [BoxPistols/ux-writing-dead-cliche](https://github.com/BoxPistols/ux-writing-dead-cliche) (MIT).
 
 ## Workflow
 
@@ -94,6 +59,7 @@ It also ships three skills:
 - ✅ Claude Code with plugin support
 - ✅ macOS and Linux
 - [Bun](https://bun.sh) on `PATH` (hooks run as TypeScript on Bun, and Claude Code installs the plugin's dependencies with `bun install`)
+
 ## Configuration
 
 | Option | Required | Description |
@@ -106,7 +72,7 @@ The feedback messages are in Japanese and encode the author's working rules (for
 
 ## Contributing
 
-Bug reports and ideas are welcome in [Issues](https://github.com/masseater/cc-jev-teacher/issues). To change which event runs which hook, start from `hooks/hooks.json`; each hook's questions and feedback live in the matching file under `src/`. To work on the hooks:
+Bug reports and ideas are welcome in [Issues](https://github.com/masseater/cc-jev-teacher/issues). To work on the hooks:
 
 ```sh
 bun install
