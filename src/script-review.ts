@@ -33,13 +33,13 @@ const hook = defineHook({
       {
         duplicated: {
           question: noul(
-            "Across `files`, are several scripts, tasks, or CI steps defined that do the same kind of job (for example `vp check` and a separate `vp run check:skills`, both checks), where one entry point that runs them all would do?",
+            "Do two or more scripts or tasks in `files` run the same tool over the same targets, differing only in options, so that keeping more than one is redundant? Entries that run at a different time or on a different subset of files, such as a hook over staged files or a CI step, are not duplicates.",
           ),
           reason: "同じ意味を持つスクリプトが複数定義されています。1つにまとめてください。",
         },
         hardcoded: {
           question: noul(
-            "Does a script, task, or CI step in `files` name specific files, directories, or packages one by one (for example each skill directory), so it must be edited whenever one is added, where a glob, `git ls-files`, or a config file would scale?",
+            "Does a script, task, or CI step in `files` hand its target files or directories to a tool by listing each one by name, so that a new file of the same kind would be skipped until someone edits the script?",
           ),
           reason:
             "対象のファイルやディレクトリを1つずつハードコードしていて、増えたときに追いつきません。増えても書き足さずに済むよう、対象がまとめて決まる形にしてください。",

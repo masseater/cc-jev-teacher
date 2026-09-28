@@ -1,7 +1,7 @@
 {
   "schema": "jev-lint-cache-4",
   "model": "jev-1.13.0",
-  "written": "2026-09-28T15:38:23.581Z",
+  "written": "2026-09-28T15:42:07.403Z",
   "entries": {
     "c1a0ffe48984f95005fcf2c3": {
       "value": 0.41,
@@ -3874,6 +3874,61 @@
       "file": "src/scratch-path.ts",
       "line": 6,
       "at": "2026-09-28T15:38:23.581Z"
+    },
+    "244f11dc338b6cc055af82af": {
+      "value": 0.38,
+      "confidence": null,
+      "kind": "noul",
+      "rule": "diff-follows-instructions",
+      "draft": "4bea78e91af8",
+      "arm": "bare",
+      "file": "3f419555006430cedadddd738f8ce7f59995965c",
+      "line": 1,
+      "at": "2026-09-28T15:38:45.457Z"
+    },
+    "3cf0dd55b62fe3a890883bbf": {
+      "value": 0.31,
+      "confidence": null,
+      "kind": "noul",
+      "rule": "commit-message-describes-diff",
+      "draft": "f8682af992d5",
+      "arm": "bare",
+      "file": "3f419555006430cedadddd738f8ce7f59995965c",
+      "line": 1,
+      "at": "2026-09-28T15:38:45.466Z"
+    },
+    "5ac2e1479af87ba972883b46": {
+      "value": 0.07,
+      "confidence": null,
+      "kind": "noul",
+      "rule": "var-name-describes-value",
+      "draft": "f54601cabb48",
+      "arm": "located",
+      "file": "src/script-review.ts",
+      "line": 15,
+      "at": "2026-09-28T15:42:06.742Z"
+    },
+    "ed6bb9ce3434d13f7e134c9d": {
+      "value": 0.2,
+      "confidence": null,
+      "kind": "noul",
+      "rule": "var-name-describes-value",
+      "draft": "f54601cabb48",
+      "arm": "located",
+      "file": "src/script-review.ts",
+      "line": 23,
+      "at": "2026-09-28T15:42:06.742Z"
+    },
+    "5f448cdaeedb45bd4438b8e6": {
+      "value": 0.49,
+      "confidence": null,
+      "kind": "noul",
+      "rule": "diff-follows-instructions",
+      "draft": "4bea78e91af8",
+      "arm": "bare",
+      "file": "staged",
+      "line": 1,
+      "at": "2026-09-28T15:42:07.403Z"
     }
   }
 }
