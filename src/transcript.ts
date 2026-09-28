@@ -50,7 +50,7 @@ const entryOf = (line: string) => v.parse(Entry, JSON.parse(line));
 const SEARCH_TOOLS = /exa|websearch|webfetch|web_search|web_fetch|firecrawl|context7|jev_navigate/i;
 const SEARCH_SKILLS = /dont-it-yourself|find-skills|firecrawl|deep-research/;
 const SEARCH_COMMANDS =
-  /\b(gh (api|search|repo view)|skills (find|add)|npm (view|search|info)|vp (info|view)|pnpm (view|info)|curl\s[^|]*https?:\/\/|jg )/;
+  /\b(gh (api|search|repo view)|skills (find|add)|npm (view|search|info)|vp (info|view)|pnpm (view|info)|bun (pm view|info)|yarn (info|npm info)|curl\s[^|]*https?:\/\/|jg )/;
 
 const textOf = (content: unknown) =>
   blocksOf(content)
