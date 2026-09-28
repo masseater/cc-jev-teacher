@@ -30,7 +30,7 @@ Ask Claude to edit a file with a script, and the `script-edit` hook stops it:
 ```text
 ⏺ Bash(sed -i "" "s/1/2/" app.ts)
   ⎿  PreToolUse:Bash hook error: [bun ".../cc-jev-teacher/src/script-edit.ts"]:
-     数ファイル程度の編集にスクリプトを使っています。Edit / Write ツールで直接編集してください。
+     - 数ファイル程度の編集にスクリプトを使っています。変更が見えて確かめられるよう、ファイルを直接編集してください。
 ```
 
 End a turn with an unfinished, hedged, English report, and the `stop-report-check` hook sends it back:
@@ -44,7 +44,7 @@ Stop hook feedback:
 
 ## What It Does
 
-The hooks check Claude's tool calls, the documents it writes, and its reports, and block with feedback when one falls short, such as editing a file with `sed -i`. TypeSafe Jev makes every judgment; the questions live under `src/`, and the feedback points Claude to the skills under `skills/`.
+The hooks check Claude's tool calls, the documents it writes, and its reports, and block with feedback when one falls short, such as editing a file with `sed -i` or naming a domain concept `BookingDataProcessor`. Naming is judged against the project's glossary (`CONTEXT.md` and similar) when there is one. TypeSafe Jev makes every judgment; the questions live under `src/`, and the feedback points Claude to the skills under `skills/`.
 
 The `dead-cliche-writing` skill comes from [BoxPistols/ux-writing-dead-cliche](https://github.com/BoxPistols/ux-writing-dead-cliche) (MIT) and runs its checker from the npm package `textlint-rule-ux-writing-dead-cliche`.
 
