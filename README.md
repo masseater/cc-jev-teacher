@@ -37,3 +37,5 @@ pnpm typecheck
 pnpm build   # regenerates dist/, which is committed because plugins are installed without npm install
 claude --plugin-dir .
 ```
+
+Bump `version` in `.claude-plugin/plugin.json` when releasing; installed copies update only when it changes.
