@@ -1,6 +1,6 @@
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
-import { collectToolCalls, fitState } from "fast-jev-compaction";
+import { collectToolCalls, fitState, type Message } from "fast-jev-compaction";
 
 import { type Checks, failedOf, hasApiKey } from "./hook.ts";
 import { entriesOf, messagesOf, stopFeedbackOf } from "./transcript.ts";
@@ -25,6 +25,27 @@ const checks: Checks = {
   },
 };
 
+// The history fitted into Jev's limit. When even the most compact form is too large, the oldest messages are dropped a tenth at a time.
+const historyOf = (messages: Array<Message>) => {
+  const step = Math.ceil(messages.length / 10);
+  for (let start = 0; ; start += step) {
+    const recent = messages.slice(start);
+    try {
+      return fitState(recent, collectToolCalls(recent, RECENT), {
+        maxStateTokens: 25_000,
+        preserveRecentMessages: RECENT,
+        goal: "",
+      }).state.history;
+    } catch (error) {
+      if (
+        !(error instanceof Error && error.message.includes("too large")) ||
+        recent.length <= RECENT
+      )
+        throw error;
+    }
+  }
+};
+
 const hook = defineHook({
   trigger: { Stop: true },
   shouldRun: hasApiKey,
@@ -39,11 +60,7 @@ const hook = defineHook({
     const messages = messagesOf(input.transcript_path);
     if (!messages.some((message) => message.toolUses.some((use) => CHANGING_TOOLS.has(use.tool))))
       return context.success();
-    const { history } = fitState(messages, collectToolCalls(messages, RECENT), {
-      maxStateTokens: 25_000,
-      preserveRecentMessages: RECENT,
-      goal: "",
-    }).state;
+    const history = historyOf(messages);
     const failed = await failedOf(
       {
         context:

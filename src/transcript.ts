@@ -143,12 +143,16 @@ export const searchedOf = (toolUses: ReturnType<typeof toolUsesOf>) =>
       (part.name === "Bash" && SEARCH_COMMANDS.test(part.input?.command ?? "")),
   );
 
-// Every message of the session, in the shape fast-jev-compaction takes.
-export const messagesOf = (transcriptPath: string): Array<Message> =>
-  readFileSync(transcriptPath, "utf8")
-    .split("\n")
-    .filter(Boolean)
-    .map(entryOf)
+// Messages of the session as the model sees it: from the last compaction summary, which stands for everything before it.
+export const messagesOf = (transcriptPath: string): Array<Message> => {
+  const entries = readFileSync(transcriptPath, "utf8").split("\n").filter(Boolean).map(entryOf);
+  return entries
+    .slice(
+      Math.max(
+        0,
+        entries.findLastIndex((entry) => entry.isCompactSummary),
+      ),
+    )
     .filter((entry) => (entry.type === "user" && !entry.isMeta) || entry.type === "assistant")
     .map((entry) => {
       const blocks = blocksOf(entry.message?.content);
@@ -174,3 +178,4 @@ export const messagesOf = (transcriptPath: string): Array<Message> =>
           })),
       };
     });
+};
