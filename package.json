@@ -1,5 +1,5 @@
 {
-  "name": "jev",
+  "name": "claude-code-follow-through",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@12.6.0",

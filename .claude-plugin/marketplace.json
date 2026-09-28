@@ -1,14 +1,16 @@
 {
-  "name": "jev",
-  "description": "The jev hooks plugin",
+  "name": "follow-through",
+  "description": "Claude Code plugin that makes Claude finish the job before it reports",
   "owner": {
-    "name": "masseater"
+    "name": "masseater",
+    "url": "https://github.com/masseater"
   },
   "plugins": [
     {
-      "name": "jev",
+      "name": "follow-through",
       "source": "./",
-      "description": "TypeSafe-backed hooks that keep Claude Code working until the report is done"
+      "description": "TypeSafe-judged hooks that send Claude back to work instead of letting it cut corners or stop early",
+      "category": "productivity"
     }
   ]
 }
