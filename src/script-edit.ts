@@ -3,21 +3,17 @@ import { defineHook, runHook } from "cc-hooks-ts";
 
 import { failedOf, hasApiKey } from "./hook.ts";
 
-const WRITES =
-  /sed\s+-i|perl\s+-p?i|python3?\s|node\s+(-e|-)|>>?\s*(?!\/dev\/null)[^\s&|]|\btee\b|\bmv\s|\bcp\s/;
-
 const hook = defineHook({
   trigger: { PreToolUse: { Bash: true } },
   shouldRun: hasApiKey,
   run: async (context) => {
     const { command } = context.input.tool_input;
-    if (!WRITES.test(command)) return context.success();
     const failed = await failedOf(
       { command },
       {
         script: {
           question: noul(
-            "Does this shell command change the contents of source code or document files through a script (sed -i, perl -pi, python or node code, heredoc or redirection into a file) instead of editing them directly? Writing only to temporary or scratch directories, lock files, or generated output does not count.",
+            "When `command` runs, does it itself rewrite source code or document files on disk, which the assistant should edit directly instead? Judge by what actually happens when it runs: text handed to a program as input is data, not a file write. Commands that only read, run, test, check, or format, and commands that write only temporary, generated, or lock files, do not count.",
           ),
           reason:
             "数ファイル程度の編集にスクリプトを使っています。変更が見えて確かめられるよう、ファイルを直接編集してください。",

@@ -3,7 +3,7 @@ import { defineHook, runHook } from "cc-hooks-ts";
 
 import { clientOf, hasApiKey, THRESHOLD } from "./hook.ts";
 import { aiJapanese } from "./japanese.ts";
-import { entriesOf, instructionOf, searchedOf, stopFeedbackOf, toolUsesOf } from "./transcript.ts";
+import { entriesOf, instructionOf, stopFeedbackOf, toolCallsOf, toolUsesOf } from "./transcript.ts";
 
 const questions = {
   unfinished: noul(
@@ -31,7 +31,7 @@ const questions = {
     "Does the report say it fixed a problem only by working around or hiding the symptom (for example retries, catching and ignoring errors, special cases, hiding the output, or manual data fixes) instead of removing the underlying cause?",
   ),
   memoryDurable: noul(
-    "Did the assistant save to its own memory (see memory_writes, or the report) something meant to apply from now on, such as a rule, decision, policy, convention, or how-to, instead of only temporary context for the work in progress? memory_writes of (none) with a report that does not mention saving to memory does not count.",
+    "Did the assistant save to its own memory (see `tool_calls` and the report) something meant to apply from now on, such as a rule, decision, policy, convention, or how-to, instead of only temporary context for the work in progress?",
   ),
   askPermission: noul(
     "Is the assistant waiting for the user's permission to do something it could do by itself, such as installing, deploying, deleting, or running commands? Questions about billing, personal information, or product choices do not count.",
@@ -40,8 +40,8 @@ const questions = {
     "Does the response ask or advise the user to issue, rotate, reissue, or revoke an API key, token, or secret?",
   ),
   localhost: noul("Does the response tell the user to open a localhost or 127.0.0.1 URL?"),
-  externalClaim: noul(
-    "Does the response state facts about the latest versions, features, specifications, APIs, or prices of external software or services?",
+  unsourced: noul(
+    "Does the response state facts about the latest versions, features, specifications, APIs, or prices of external software or services that the assistant did not check against a live primary source during this turn (see `tool_calls`)?",
   ),
   askedEnglish: noul("Does the instruction ask for the answer to be written in English?"),
   english: noul(
@@ -57,7 +57,7 @@ type Question = keyof typeof questions;
 
 const thresholds: Partial<Record<Question, number>> = { unfinished: 0.8, symptomOnly: 0.8 };
 
-type Verdict = { hit: (key: Question) => boolean; searched: boolean };
+type Verdict = { hit: (key: Question) => boolean };
 
 // Listed in the order the reasons are shown. A check without `failed` fails when its own question hits.
 const checks: Record<string, { reason: string; failed?: (verdict: Verdict) => boolean }> = {
@@ -104,7 +104,6 @@ const checks: Record<string, { reason: string; failed?: (verdict: Verdict) => bo
   unsourced: {
     reason:
       "外部のソフトウェアやサービスの最新の仕様・バージョン・料金などを、このターンで調べずに書いています。古い知識で誤らないよう、一次情報で確かめてから書き直してください。",
-    failed: (verdict) => verdict.hit("externalClaim") && !verdict.searched,
   },
   english: {
     reason:
@@ -119,18 +118,6 @@ const checks: Record<string, { reason: string; failed?: (verdict: Verdict) => bo
   },
 };
 
-const memoryWritesOf = (toolUses: ReturnType<typeof toolUsesOf>) =>
-  toolUses
-    .filter(
-      (part) =>
-        (part.name === "Write" || part.name === "Edit") &&
-        /\/memory\//.test(part.input?.file_path ?? ""),
-    )
-    .map(
-      (part) => `${part.input?.file_path}\n${part.input?.content ?? part.input?.new_string ?? ""}`,
-    )
-    .join("\n\n");
-
 const hook = defineHook({
   trigger: { Stop: true },
   shouldRun: hasApiKey,
@@ -139,19 +126,17 @@ const hook = defineHook({
     const report = input.last_assistant_message?.trim();
     if (!report) return context.success();
     const entries = entriesOf(input.transcript_path);
-    const toolUses = toolUsesOf(entries);
     const { answers } = await clientOf().systemOne({
       state: {
         instruction: instructionOf(entries),
         report,
-        memory_writes: memoryWritesOf(toolUses) || "(none)",
+        tool_calls: toolCallsOf(toolUsesOf(entries)),
       },
       questions,
     });
     const given = stopFeedbackOf(entries);
     const scores: Partial<Record<Question, { noul: number }>> = answers;
     const verdict: Verdict = {
-      searched: searchedOf(toolUses),
       hit: (key) => (scores[key]?.noul ?? 0) >= (thresholds[key] ?? THRESHOLD),
     };
     const failed = Object.entries(checks)

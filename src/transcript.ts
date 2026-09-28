@@ -47,11 +47,6 @@ const blocksOf = (content: unknown) =>
 
 const entryOf = (line: string) => v.parse(Entry, JSON.parse(line));
 
-const SEARCH_TOOLS = /exa|websearch|webfetch|web_search|web_fetch|firecrawl|context7|jev_navigate/i;
-const SEARCH_SKILLS = /dont-it-yourself|find-skills|firecrawl|deep-research/;
-const SEARCH_COMMANDS =
-  /\b(gh (api|search|repo view)|skills (find|add)|npm (view|search|info)|vp (info|view)|pnpm (view|info)|bun (pm view|info)|yarn (info|npm info)|curl\s[^|]*https?:\/\/|jg )/;
-
 const textOf = (content: unknown) =>
   blocksOf(content)
     .filter((block) => block.type === "text")
@@ -135,13 +130,12 @@ export const toolUsesOf = (entries: Array<Entry>) =>
     .flatMap((entry) => blocksOf(entry.message?.content))
     .filter((part) => part.type === "tool_use");
 
-export const searchedOf = (toolUses: ReturnType<typeof toolUsesOf>) =>
-  toolUses.some(
-    (part) =>
-      SEARCH_TOOLS.test(part.name ?? "") ||
-      (part.name === "Skill" && SEARCH_SKILLS.test(part.input?.skill ?? "")) ||
-      (part.name === "Bash" && SEARCH_COMMANDS.test(part.input?.command ?? "")),
-  );
+// The tool calls of the turn, one per line and shortened, the latest kept when there are too many.
+export const toolCallsOf = (toolUses: ReturnType<typeof toolUsesOf>) =>
+  toolUses
+    .map((part) => `${part.name} ${JSON.stringify(part.input ?? {}).slice(0, 300)}`)
+    .join("\n")
+    .slice(-12000) || "(none)";
 
 // Messages of the session as the model sees it: from the last compaction summary, which stands for everything before it.
 export const messagesOf = (transcriptPath: string): Array<Message> => {

@@ -4,7 +4,7 @@ import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
 import { failedOf, hasApiKey, isScratch } from "./hook.ts";
-import { entriesOf, instructionOf, searchedOf, toolUsesOf } from "./transcript.ts";
+import { entriesOf, instructionOf, toolCallsOf, toolUsesOf } from "./transcript.ts";
 
 const hook = defineHook({
   trigger: { PreToolUse: { Write: true } },
@@ -13,13 +13,12 @@ const hook = defineHook({
     const path = context.input.tool_input.file_path;
     if (existsSync(path) || isScratch(path)) return context.success();
     const entries = entriesOf(context.input.transcript_path);
-    if (searchedOf(toolUsesOf(entries))) return context.success();
     const failed = await failedOf(
-      { instruction: instructionOf(entries) },
+      { instruction: instructionOf(entries), tool_calls: toolCallsOf(toolUsesOf(entries)) },
       {
         build: {
           question: noul(
-            "Does the instruction ask the assistant to build something new, such as a feature, tool, script, hook, library, or mechanism, rather than only fixing a bug, changing settings, explaining, proposing, or investigating?",
+            "Does the instruction ask the assistant to build something new, such as a feature, tool, script, hook, library, or mechanism (rather than only fixing a bug, changing settings, explaining, proposing, or investigating), while `tool_calls` show no search for an existing solution that already does it?",
           ),
           reason:
             "作る手間と保守を減らすため、新しく作る前に既存のソリューションが無いかを調べ、使えるものが無いと確かめてから作ってください。dont-it-yourself スキルに従ってください。",

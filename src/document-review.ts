@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
 
 import { noul } from "@typesafe-ai/sdk";
@@ -132,7 +132,12 @@ const hook = defineHook({
         available_skills: skillsOf(repository.files),
         other_documents: repository.files
           .map((file) => join(repository.root, file))
-          .filter((file) => PROSE_FILE.test(file) && file !== path && existsSync(file))
+          .filter(
+            (file) =>
+              PROSE_FILE.test(file) &&
+              existsSync(file) &&
+              realpathSync(file) !== realpathSync(path),
+          )
           .map((file) => `# ${relative(repository.root, file)}\n${readFileSync(file, "utf8")}`)
           .join("\n\n")
           .slice(0, LIMIT),
