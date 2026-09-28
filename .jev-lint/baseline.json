@@ -1,7 +1,7 @@
 {
   "schema": "jev-lint-cache-4",
   "model": "jev-1.13.0",
-  "written": "2026-09-28T15:42:07.403Z",
+  "written": "2026-09-28T15:42:08.533Z",
   "entries": {
     "c1a0ffe48984f95005fcf2c3": {
       "value": 0.41,
@@ -3929,6 +3929,28 @@
       "file": "staged",
       "line": 1,
       "at": "2026-09-28T15:42:07.403Z"
+    },
+    "91e217d198ffd3210e79563d": {
+      "value": 0.29,
+      "confidence": null,
+      "kind": "noul",
+      "rule": "commit-message-describes-diff",
+      "draft": "f8682af992d5",
+      "arm": "bare",
+      "file": "ea9c7ba2e88f5820b037710ffc14a56dd2715632",
+      "line": 1,
+      "at": "2026-09-28T15:42:08.527Z"
+    },
+    "acb48b70ee29f11c518787e3": {
+      "value": 0.57,
+      "confidence": null,
+      "kind": "noul",
+      "rule": "diff-follows-instructions",
+      "draft": "4bea78e91af8",
+      "arm": "bare",
+      "file": "ea9c7ba2e88f5820b037710ffc14a56dd2715632",
+      "line": 1,
+      "at": "2026-09-28T15:42:08.533Z"
     }
   }
 }
