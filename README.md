@@ -63,7 +63,10 @@ Stop hook feedback:
 | 🔒 `config-relax` | disables or loosens a setting, lint rule, check, or limit you did not ask to loosen |
 | 📝 `stop-report-check` | reports with work unfinished or unverified, test data left behind, a symptom-only fix, no recurrence prevention, guessed numbers, needless permission requests, unchecked external facts, or too many words |
 
-It also ships the 📦 `dont-it-yourself` skill, which `existing-solution` points Claude to when it should look for an existing solution first.
+It also ships two skills:
+
+- 📦 `dont-it-yourself` — look for an existing library, CLI, or service before writing code; `existing-solution` points Claude here
+- 📏 `measure-everything` — never swallow failures, and back every claim about causes, frequency, or latency with measured numbers
 
 ## How It Triggers
 
@@ -107,7 +110,7 @@ cc-jev-teacher/
 │   ├── plugin.json           # Plugin manifest and the API key option
 │   └── marketplace.json      # Lets `claude plugin marketplace add` find the plugin
 ├── hooks/hooks.json          # Event → hook wiring
-├── skills/dont-it-yourself/  # Bundled skill
+├── skills/                   # Bundled skills: dont-it-yourself, measure-everything
 └── src/                      # Hooks, typed with cc-hooks-ts
 ```
 
