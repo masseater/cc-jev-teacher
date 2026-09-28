@@ -61,7 +61,11 @@ Stop hook feedback:
 | 🛠️ `script-edit` | edits source files with `sed -i`, heredocs, or scripts instead of Edit / Write |
 | 🔍 `existing-solution` | starts building something new without first searching for an existing library, CLI, service, or skill |
 | 🔒 `config-relax` | disables or loosens a setting, lint rule, check, or limit you did not ask to loosen |
-| 📝 `stop-report-check` | reports with work unfinished or unverified, test data left behind, a symptom-only fix, no recurrence prevention, guessed numbers, needless permission requests, unchecked external facts, or too many words |
+| 🧩 `skill-review` | writes a `SKILL.md` that lacks `name` / `description`, references missing files, explains reasons nobody needs, carries filler, or copies other docs instead of pointing to them |
+| 🗾 `natural-japanese` | writes Markdown or text in AI-sounding Japanese such as 「〜は〜で、〜ではない」 |
+| 📝 `stop-report-check` | reports with work unfinished or unverified, test data left behind, a symptom-only fix, no recurrence prevention, guessed numbers, needless permission requests, unchecked external facts, AI-sounding Japanese, English prose, or too many words |
+
+Every judgment is made by TypeSafe Jev. The hooks only decide locally whether a tool call is worth sending (for example, whether a file is a `SKILL.md`).
 
 It also ships two skills:
 
@@ -75,9 +79,8 @@ It also ships two skills:
 | `PreToolUse` | `Bash` | `script-edit` |
 | `PreToolUse` | `Write` | `existing-solution` |
 | `PreToolUse` | `Write` \| `Edit` | `config-relax` |
+| `PostToolUse` | `Write` \| `Edit` | `skill-review` (`SKILL.md` only), `natural-japanese` (`.md` / `.mdx` / `.txt` only) |
 | `Stop` | | `stop-report-check` |
-
-Cheap local checks run first (a regex on the command, the file path, the diff); a tool call that passes them never reaches the API.
 
 ## Workflow
 

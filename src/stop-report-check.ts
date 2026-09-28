@@ -2,6 +2,7 @@ import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
 import { clientOf, hasApiKey, THRESHOLD } from "./hook.ts";
+import { aiJapaneseQuestion, aiJapaneseReason } from "./japanese.ts";
 import { entriesOf, instructionOf, searchedOf, toolUsesOf } from "./transcript.ts";
 
 const questions = {
@@ -43,13 +44,24 @@ const questions = {
     "Does the response state facts about the latest versions, features, specifications, APIs, or prices of external software or services?",
   ),
   askedEnglish: noul("Does the instruction ask for the answer to be written in English?"),
+  english: noul(
+    "Is most of the report's prose written in English rather than Japanese? Code, identifiers, file paths, commands, URLs, and quoted UI text do not count.",
+  ),
+  aiJapanese: aiJapaneseQuestion,
+};
+
+// Asked again on a retry after feedback; only the checks built on these run then.
+const retryQuestions = {
+  english: questions.english,
+  askedEnglish: questions.askedEnglish,
+  aiJapanese: questions.aiJapanese,
 };
 
 type Question = keyof typeof questions;
 
 const thresholds: Partial<Record<Question, number>> = { unfinished: 0.8, symptomOnly: 0.8 };
 
-type Verdict = { hit: (key: Question) => boolean; english: boolean; searched: boolean };
+type Verdict = { hit: (key: Question) => boolean; searched: boolean };
 
 // Listed in the order the reasons are shown. A check without `failed` fails when its own question hits.
 const checks: Record<string, { reason: string; failed?: (verdict: Verdict) => boolean }> = {
@@ -75,7 +87,7 @@ const checks: Record<string, { reason: string; failed?: (verdict: Verdict) => bo
   },
   unmeasured: {
     reason:
-      "推測や曖昧な量（おそらく・〜のはず・多い・速い など）で書いています。原因・頻度・レイテンシ・費用・影響は、実際に計測した具体的な数値と、その出どころ（ログのクエリ・コマンドの出力・ファイル）を添えて書き直してください。計測できなかったものは、計測できなかったことと理由を書いてください。",
+      "推測や曖昧な量（おそらく・〜のはず・多い・速い など）で書いています。measure-everything スキルに従ってください。原因・頻度・レイテンシ・費用・影響は、実際に計測した具体的な数値と、その出どころ（ログのクエリ・コマンドの出力・ファイル）を添えて書き直してください。計測できなかったものは、計測できなかったことと理由を書いてください。",
   },
   memoryDurable: {
     reason:
@@ -101,32 +113,14 @@ const checks: Record<string, { reason: string; failed?: (verdict: Verdict) => bo
   english: {
     reason:
       "応答の地の文が英語になっています。日本語で書き直してください。コード・識別子・ファイルパス・UI 文言の引用は原文のままでかまいません。",
-    failed: (verdict) => verdict.english && !verdict.hit("askedEnglish"),
+    failed: (verdict) => verdict.hit("english") && !verdict.hit("askedEnglish"),
   },
+  aiJapanese: { reason: aiJapaneseReason },
   verbose: {
     reason:
       "報告が冗長です。指示された各項目を今どうしたかと、動作確認をどこでどうしたかだけを、簡潔に書き直してください。作業の経緯・調べ方・後片付けの手順は書かないでください。",
     failed: (verdict) => verdict.hit("verbose") && verdict.hit("isReport"),
   },
-};
-
-const JAPANESE = /[぀-ヿ㐀-鿿ｦ-ﾟ]/;
-const WORD = /[A-Za-z]+(?:'[A-Za-z]+)?/g;
-
-const englishOf = (report: string) => {
-  const lines = report
-    .replace(/```[\s\S]*?```/g, "")
-    .replace(/`[^`\n]*`/g, "")
-    .replace(/!?\[[^\]\n]*\]\([^)\n]*\)/g, "")
-    .replace(/https?:\/\/\S+/g, "")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-  const total = lines.reduce((sum, line) => sum + line.length, 0);
-  const english = lines
-    .filter((line) => !JAPANESE.test(line) && (line.match(WORD) ?? []).length >= 4)
-    .reduce((sum, line) => sum + line.length, 0);
-  return total > 0 && english / total >= 0.5;
 };
 
 const memoryWritesOf = (toolUses: ReturnType<typeof toolUsesOf>) =>
@@ -146,9 +140,6 @@ const hook = defineHook({
     const { input } = context;
     const report = input.last_assistant_message?.trim();
     if (!report) return context.success();
-    const english = englishOf(report);
-    // On a retry after feedback, only the language is checked again.
-    if (input.stop_hook_active && !english) return context.success();
     const entries = entriesOf(input.transcript_path);
     const toolUses = toolUsesOf(entries);
     const { answers } = await clientOf().systemOne({
@@ -157,16 +148,15 @@ const hook = defineHook({
         report,
         memory_writes: memoryWritesOf(toolUses) || "(none)",
       },
-      questions: input.stop_hook_active ? { askedEnglish: questions.askedEnglish } : questions,
+      questions: input.stop_hook_active ? retryQuestions : questions,
     });
     const scores: Partial<Record<Question, { noul: number }>> = answers;
     const verdict: Verdict = {
-      english,
       searched: searchedOf(toolUses),
       hit: (key) => (scores[key]?.noul ?? 0) >= (thresholds[key] ?? THRESHOLD),
     };
     const failed = Object.entries(checks)
-      .filter(([key]) => !input.stop_hook_active || key === "english")
+      .filter(([key]) => !input.stop_hook_active || key in retryQuestions)
       .filter(([key, check]) => (check.failed ? check.failed(verdict) : verdict.hit(key as Question)))
       .map(([, check]) => `- ${check.reason}`);
     if (failed.length === 0) return context.success();
