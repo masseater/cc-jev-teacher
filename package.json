@@ -2,6 +2,7 @@
   "name": "jev",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@12.6.0",
   "scripts": {
     "build": "esbuild src/config-relax.ts src/existing-solution.ts src/script-edit.ts src/stop-report-check.ts --bundle --platform=node --format=esm --target=node20 --outdir=dist --out-extension:.js=.mjs",
     "typecheck": "tsc"
