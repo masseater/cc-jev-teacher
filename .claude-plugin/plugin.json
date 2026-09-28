@@ -1,16 +1,13 @@
 {
-  "name": "follow-through",
-  "displayName": "Follow Through",
-  "version": "0.1.0",
-  "description": "Hooks that make Claude finish the job: TypeSafe judges each tool call and final report, and sends Claude back to work on script edits, unrequested config relaxation, building before searching, and unfinished, verbose or unmeasured reports",
+  "name": "cc-jev-teacher",
+  "description": "Claude Code hooks that make Claude finish the job: TypeSafe judges each tool call and final report, and sends Claude back to work on script edits, unrequested config relaxation, building before searching, and unfinished, verbose or unmeasured reports",
   "author": {
     "name": "masseater",
     "url": "https://github.com/masseater"
   },
-  "homepage": "https://github.com/masseater/claude-code-follow-through",
-  "repository": "https://github.com/masseater/claude-code-follow-through",
+  "repository": "https://github.com/masseater/cc-jev-teacher",
   "license": "MIT",
-  "keywords": ["hooks", "stop-hook", "guardrails", "typesafe", "code-quality"],
+  "keywords": ["hooks", "stop-hook", "guardrails", "typesafe", "jev"],
   "userConfig": {
     "typesafe_api_key": {
       "type": "string",

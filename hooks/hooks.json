@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/script-edit.mjs\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/script-edit.ts\"",
             "timeout": 30
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/existing-solution.mjs\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/existing-solution.ts\"",
             "timeout": 30
           }
         ]
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/config-relax.mjs\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/config-relax.ts\"",
             "timeout": 30
           }
         ]
@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/stop-report-check.mjs\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/stop-report-check.ts\"",
             "timeout": 30
           }
         ]

@@ -1,13 +1,13 @@
-import { readFileSync } from "node:fs";
+import { closeSync, fstatSync, openSync, readSync } from "node:fs";
 
-export type Entry = {
+type Entry = {
   type?: string;
   isMeta?: boolean;
   message?: { role?: string; content?: unknown };
   attachment?: { type?: string; prompt?: unknown; humanTurn?: boolean };
 };
 
-export type ToolUse = {
+type ToolUse = {
   type?: string;
   name?: string;
   input?: {
@@ -37,25 +37,53 @@ const textOf = (content: unknown) =>
           .join("\n")
       : "";
 
-export const entriesOf = (transcriptPath: string) =>
-  readFileSync(transcriptPath, "utf8")
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => JSON.parse(line) as Entry);
-
 const promptOf = (entry: Entry) => {
   if (entry.type !== "user" || entry.isMeta || entry.message?.role !== "user") return null;
   const text = textOf(entry.message.content).trim();
   return text && !text.startsWith("<") && !text.startsWith("Stop hook feedback") ? text : null;
 };
 
+const CHUNK = 1 << 20;
+const NEWLINE = 0x0a;
+
+// Entries of the current turn: from the last human prompt to the end, read backwards in chunks.
+export const entriesOf = (transcriptPath: string) => {
+  const fd = openSync(transcriptPath, "r");
+  try {
+    const entries: Array<Entry> = [];
+    let end = fstatSync(fd).size;
+    let rest = Buffer.alloc(0);
+    while (end > 0) {
+      const start = Math.max(0, end - CHUNK);
+      const chunk = Buffer.alloc(end - start);
+      readSync(fd, chunk, 0, chunk.length, start);
+      end = start;
+      const data = Buffer.concat([chunk, rest]);
+      const cut = start === 0 ? -1 : data.indexOf(NEWLINE);
+      if (start > 0 && cut === -1) {
+        rest = data;
+        continue;
+      }
+      rest = data.subarray(0, cut + 1);
+      const lines = data.subarray(cut + 1).toString("utf8").split("\n").reverse();
+      for (const line of lines) {
+        if (!line) continue;
+        const entry = JSON.parse(line) as Entry;
+        entries.push(entry);
+        if (promptOf(entry) !== null) return entries.reverse();
+      }
+    }
+    return entries.reverse();
+  } finally {
+    closeSync(fd);
+  }
+};
+
 export const instructionOf = (entries: Array<Entry>) =>
   entries
     .reduce<Array<string>>((turn, entry) => {
-      if (entry.type === "user" && !entry.isMeta && entry.message?.role === "user") {
-        const text = promptOf(entry);
-        return text ? [text] : turn;
-      }
+      const text = promptOf(entry);
+      if (text) return [text];
       const queued = entry.attachment;
       return entry.type === "attachment" &&
         queued?.type === "queued_command" &&
@@ -68,7 +96,6 @@ export const instructionOf = (entries: Array<Entry>) =>
 
 export const toolUsesOf = (entries: Array<Entry>) =>
   entries
-    .slice(entries.findLastIndex((entry) => promptOf(entry) !== null) + 1)
     .flatMap((entry) =>
       entry.type === "assistant" && Array.isArray(entry.message?.content)
         ? (entry.message.content as Array<ToolUse>)
@@ -76,8 +103,8 @@ export const toolUsesOf = (entries: Array<Entry>) =>
     )
     .filter((part) => part.type === "tool_use");
 
-export const searchedOf = (entries: Array<Entry>) =>
-  toolUsesOf(entries).some(
+export const searchedOf = (toolUses: Array<ToolUse>) =>
+  toolUses.some(
     (part) =>
       SEARCH_TOOLS.test(part.name ?? "") ||
       (part.name === "Skill" && SEARCH_SKILLS.test(part.input?.skill ?? "")) ||

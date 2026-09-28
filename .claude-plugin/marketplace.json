@@ -1,5 +1,5 @@
 {
-  "name": "follow-through",
+  "name": "cc-jev-teacher",
   "description": "Claude Code plugin that makes Claude finish the job before it reports",
   "owner": {
     "name": "masseater",
@@ -7,9 +7,8 @@
   },
   "plugins": [
     {
-      "name": "follow-through",
+      "name": "cc-jev-teacher",
       "source": "./",
-      "description": "TypeSafe-judged hooks that send Claude back to work instead of letting it cut corners or stop early",
       "category": "productivity"
     }
   ]
