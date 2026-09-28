@@ -1,4 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { basename, dirname, join, relative } from "node:path";
 
 import { noul } from "@typesafe-ai/sdk";
@@ -11,6 +12,19 @@ import { repositoryOf } from "./repository.ts";
 const PROSE_FILE = /\.(md|mdx|markdown|txt)$/i;
 const DOCS = new Set(["README.md", "AGENTS.md", "CLAUDE.md"]);
 const LIMIT = 12000;
+const SKILL_FILE = /(^|\/)skills\/([^/]+)\/SKILL\.md$/;
+const CONFIG_DIR = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude");
+
+// Skills of the repository, the user, and installed plugins.
+const skillsOf = (repositoryFiles: Array<string>) => {
+  const installed = ["skills/*/SKILL.md", "plugins/cache/*/*/*/skills/*/SKILL.md"].flatMap(
+    (pattern) => [...new Bun.Glob(pattern).scanSync({ cwd: CONFIG_DIR, followSymlinks: true })],
+  );
+  const names = [...repositoryFiles, ...installed]
+    .map((file) => SKILL_FILE.exec(file)?.[2])
+    .filter((name) => name !== undefined);
+  return [...new Set(names)].join("\n");
+};
 
 const proseChecks: Checks = {
   aiJapanese,
@@ -20,6 +34,13 @@ const proseChecks: Checks = {
     ),
     reason:
       "ファイルパスのように書かれているのに、そのファイルがリポジトリにありません。正しいパスに直すか、別のリポジトリのものならどのリポジトリかを書いてください。",
+  },
+  missingSkill: {
+    question: noul(
+      "Does `document` refer to a skill by name (such as 「<name> スキル」, `<name>` skill, or `/<name>`) that is not in `available_skills`? Skills the document explicitly says belong to another named repository do not count.",
+    ),
+    reason:
+      "存在しないスキルを参照しています。参照が切れないよう、実在するスキルを指すか、どこのスキルかを書いてください。",
   },
   skillPath: {
     question: noul(
@@ -110,6 +131,7 @@ const hook = defineHook({
           .filter((file) => file.split("/").some((segment) => document.includes(segment)))
           .join("\n")
           .slice(0, LIMIT),
+        available_skills: skillsOf(repository.files),
         other_documents: repository.files
           .map((file) => join(repository.root, file))
           .filter((file) => PROSE_FILE.test(file) && file !== path && existsSync(file))
