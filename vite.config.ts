@@ -3,6 +3,10 @@ import { defineConfig } from "vite-plus";
 export default defineConfig({
   staged: {
     "*": "vp check --fix",
+    "*.md": [
+      "bun node_modules/.bin/dead-cliche fix --write",
+      "bun node_modules/.bin/dead-cliche check",
+    ],
   },
   fmt: {},
   lint: {
