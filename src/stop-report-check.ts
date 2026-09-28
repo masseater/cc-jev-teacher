@@ -1,7 +1,7 @@
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { clientOf, hasApiKey, THRESHOLD } from "./hook.ts";
+import { clientOf, hasApiKey, THRESHOLD } from "./jev-checks.ts";
 import { aiJapanese } from "./japanese.ts";
 import { entriesOf, instructionOf, stopFeedbackOf, toolCallsOf, toolUsesOf } from "./transcript.ts";
 
@@ -57,10 +57,10 @@ type Question = keyof typeof questions;
 
 const thresholds: Partial<Record<Question, number>> = { unfinished: 0.8, symptomOnly: 0.8 };
 
-type Verdict = { hit: (key: Question) => boolean };
+type Hit = (key: Question) => boolean;
 
 // Listed in the order the reasons are shown. A check without `failed` fails when its own question hits.
-const checks: Record<string, { reason: string; failed?: (verdict: Verdict) => boolean }> = {
+const checks: Record<string, { reason: string; failed?: (hit: Hit) => boolean }> = {
   unfinished: {
     reason:
       "完了報告に、指示のうち未対応・先送り・未検証の項目が残っています。ユーザーの判断が要るもの（セキュリティの方針、課金、仕様の選択）以外は、今この場で対応・検証してから報告し直してください。",
@@ -108,13 +108,13 @@ const checks: Record<string, { reason: string; failed?: (verdict: Verdict) => bo
   english: {
     reason:
       "応答の地の文が英語になっています。日本語で書き直してください。コード・識別子・ファイルパス・UI 文言の引用は原文のままでかまいません。",
-    failed: (verdict) => verdict.hit("english") && !verdict.hit("askedEnglish"),
+    failed: (hit) => hit("english") && !hit("askedEnglish"),
   },
   aiJapanese: { reason: aiJapanese.reason },
   verbose: {
     reason:
       "報告が冗長です。指示された各項目を今どうしたかと、動作確認をどこでどうしたかだけを、簡潔に書き直してください。作業の経緯・調べ方・後片付けの手順は書かないでください。",
-    failed: (verdict) => verdict.hit("verbose") && verdict.hit("isReport"),
+    failed: (hit) => hit("verbose") && hit("isReport"),
   },
 };
 
@@ -136,14 +136,10 @@ const hook = defineHook({
     });
     const given = stopFeedbackOf(entries);
     const scores: Partial<Record<Question, { noul: number }>> = answers;
-    const verdict: Verdict = {
-      hit: (key) => (scores[key]?.noul ?? 0) >= (thresholds[key] ?? THRESHOLD),
-    };
+    const hit: Hit = (key) => (scores[key]?.noul ?? 0) >= (thresholds[key] ?? THRESHOLD);
     const failed = Object.entries(checks)
       .filter(([key, check]) => repeatable.has(key) || !given.includes(check.reason))
-      .filter(([key, check]) =>
-        check.failed ? check.failed(verdict) : verdict.hit(key as Question),
-      )
+      .filter(([key, check]) => (check.failed ? check.failed(hit) : hit(key as Question)))
       .map(([, check]) => `- ${check.reason}`);
     if (failed.length === 0) return context.success();
     return context.blockingError(failed.join("\n"));

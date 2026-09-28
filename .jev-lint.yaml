@@ -1,0 +1,184 @@
+# jev-lint configuration. A flag of the same name overrides a setting here,
+# so a project can commit this and still let someone change one thing for one
+# run. A commented setting takes the built-in default shown after it.
+
+# What `jev-lint check` looks at with no path given, and what under those
+# paths it never judges: fixtures with planted defects, vendored code.
+# exclude: [src/fixtures, '**/*.gen.ts']   # paths, or globs
+
+# The rules that run: `on`, `off`, a severity (hint, info, warning, error),
+# or a mapping -- `{ severity: error, threshold: 0.7 }`. Write `lang/id` to
+# select one language's rule. A bare shipped id selects every language that
+# has it and warns. Every shipped rule is listed here, on; remove or turn off the
+# ones you do not want. Their cutoffs were fitted to this package's corpus,
+# not to your
+# code: https://github.com/mizchi/jev-lint#calibrating
+#
+# A rule of your own goes in .jev-lint/rules/ (a rule.yml, or the shipped
+# layout <language>/<id>/rule.yml with fixtures beside it) and is named here
+# like any other.
+rules:
+  git/commit-message-describes-diff: on
+  git/diff-follows-instructions: on
+  go/fn-name-promises: on
+  go/idempotent-name: on
+  go/module-name-describes-contents: on
+  go/must-name-panics: on
+  go/pure-name-is-pure: on
+  go/safe-name-is-safe: on
+  go/test-name-verifies-claim: on
+  go/tests-cover-failure-paths: on
+  go/var-name-describes-value: on
+  javascript/comment-describes-declaration: on
+  json/script-name-does: on
+  markdown/agent-instruction-is-unclear: on
+  markdown/agent-instructions-conflict: on
+  markdown/document-abandons-a-question: on
+  markdown/document-is-filler: on
+  markdown/document-is-formulaic: on
+  markdown/document-is-generic: on
+  markdown/document-is-incoherent: on
+  markdown/document-is-padded: on
+  markdown/document-is-slop: on
+  markdown/document-is-vague: on
+  markdown/document-lacks-firsthand-evidence: on
+  markdown/section-ends-with-a-preview: on
+  markdown/section-opens-with-an-agenda: on
+  moonbit/catch-hides-failure: on
+  moonbit/comment-describes-block: on
+  moonbit/comment-describes-declaration: on
+  moonbit/doc-errors-match-body: on
+  moonbit/error-message-matches-condition: on
+  moonbit/fn-name-promises: on
+  moonbit/idempotent-name: on
+  moonbit/log-level-matches-event: on
+  moonbit/log-message-matches-event: on
+  moonbit/module-name-describes-contents: on
+  moonbit/module-naming-consistent: on
+  moonbit/pure-name-is-pure: on
+  moonbit/safe-name-is-safe: on
+  moonbit/snapshot-only-behaviour-claim: on
+  moonbit/test-name-describes-code: on
+  moonbit/test-name-verifies-claim: on
+  moonbit/tests-cover-failure-paths: on
+  moonbit/trait-name-describes-methods: on
+  moonbit/type-name-describes-shape: on
+  moonbit/var-name-describes-value: on
+  python/class-shape-shows-its-role: on
+  python/comment-describes-block: on
+  python/comment-describes-declaration: on
+  python/doc-errors-match-body: on
+  python/fn-name-promises: on
+  python/idempotent-name: on
+  python/log-level-matches-event: on
+  python/method-name-promises: on
+  python/module-name-describes-contents: on
+  python/pure-name-is-pure: on
+  python/safe-name-is-safe: on
+  python/test-name-describes-code: on
+  python/tests-cover-failure-paths: on
+  python/var-name-describes-value: on
+  rust/comment-describes-block: on
+  rust/comment-describes-declaration: on
+  rust/doc-errors-match-body: on
+  rust/fn-name-promises: on
+  rust/module-name-describes-contents: on
+  rust/test-name-describes-code: on
+  rust/test-name-verifies-claim: on
+  rust/trait-name-describes-methods: on
+  rust/var-name-describes-value: on
+  shell/destroys-beyond-its-scope: on
+  shell/hides-what-it-runs: on
+  shell/installs-persistence: on
+  shell/opens-a-backdoor: on
+  shell/reads-secrets-it-does-not-own: on
+  shell/runs-downloaded-code: on
+  shell/takes-remote-commands: on
+  shell/weakens-security: on
+  text/query-name-describes-sql: on
+  typescript/catch-hides-failure: on
+  typescript/class-shape-shows-its-role: on
+  typescript/comment-describes-block: on
+  typescript/comment-describes-declaration: on
+  typescript/describe-names-subject: on
+  typescript/doc-errors-match-body: on
+  typescript/error-message-matches-condition: on
+  typescript/fn-name-promises: on
+  typescript/idempotent-name: on
+  typescript/log-level-matches-event: on
+  typescript/log-message-matches-event: on
+  typescript/method-name-promises: on
+  typescript/module-name-describes-contents: on
+  typescript/module-naming-consistent: on
+  typescript/pure-name-is-pure: on
+  typescript/safe-name-is-safe: on
+  typescript/snapshot-only-behaviour-claim: on
+  typescript/test-mocks-subject: on
+  typescript/test-name-describes-code: on
+  typescript/test-name-verifies-claim: on
+  typescript/tests-cover-failure-paths: on
+  typescript/type-name-describes-shape: on
+  typescript/var-name-describes-value: on
+  vibe/fn-name-promises: on
+  vibe/test-name-verifies-claim: on
+
+# The rule selection for both `review --staged` and `commits --staged`.
+# Without this section they use `rules:` above. `extends: true` copies
+# those entries, then overrides matching ids with the entries here;
+# `extends: false` selects only the entries here. A commit-message rule
+# has no subject before the commit exists, so it runs on pre-push instead.
+# hooks:
+#   precommit:
+#     extends: true
+#     rules:
+#       git/diff-follows-instructions: on
+#       git/my-snapshot-change-rule: on  # define under .jev-lint/rules/git/
+
+# A grammar ast-grep does not have built in: a tree-sitter parser compiled to
+# a dynamic library (`tree-sitter build --output moonbit.dylib`), named here
+# as ast-grep's own `customLanguages` names it. The name is what a rule's
+# `language:` must say, exactly. `expandoChar` is what `$` becomes inside a
+# pattern, needed where `$VAR` is not valid syntax -- without it a pattern
+# with a metavariable matches nothing.
+# languages:
+#   moonbit:
+#     libraryPath: parsers/moonbit.dylib
+#     extensions: [mbt]
+#     expandoChar: _
+
+# The verdict cache, keyed on each rule and each subject, meant to be
+# committed: a run over the same commit answers from it, and CI can lint
+# from it with no API key. `none` disables it. Treat it as trusted input:
+# anything that can edit it can silence a rule or invent a finding.
+# cache: .jev-lint/baseline.json
+
+# The model, and the endpoint it is asked at. Point `baseUrl` at a proxy or a
+# self-hosted deployment to move the whole tool off the default service.
+# model: jev-latest
+# baseUrl: https://api.typesafe.ai
+
+# Which environment variable holds the API key. The key itself must NEVER go in
+# this file -- it belongs in version control and a secret does not.
+# apiKeyEnv: TYPESAFE_API_KEY
+
+# One state per file (accurate, the default) or one per rule (fewer requests,
+# and a cutoff that has to be refitted). `auto` costs both and picks.
+# group: file
+
+# Override every rule's state arm. Almost always wrong to set: the arm is
+# measured per rule, and forcing `bare` silently removes the evidence from the
+# rules whose evidence is the file.
+# arm: null
+
+# Parallel requests, subjects per request, subjects per rule-axis request.
+# concurrency: 32
+# batchSize: 256
+# ruleBatchCap: 32
+
+# Ask everything n times and decide on the mean. Above 1 the cache is bypassed,
+# because a cached answer reproduces itself.
+# retry: 1
+
+# Confidence below which a finding is worded as a question for a human rather
+# than as a verdict. Confidence routes; it never suppresses.
+# unsureBelow: 0.55

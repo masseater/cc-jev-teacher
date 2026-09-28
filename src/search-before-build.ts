@@ -3,7 +3,8 @@ import { existsSync } from "node:fs";
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { failedOf, hasApiKey, isScratch } from "./hook.ts";
+import { failedOf, hasApiKey } from "./jev-checks.ts";
+import { isScratch } from "./scratch-path.ts";
 import { entriesOf, instructionOf, toolCallsOf, toolUsesOf } from "./transcript.ts";
 
 const hook = defineHook({

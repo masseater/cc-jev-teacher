@@ -4,7 +4,8 @@ import { join, relative } from "node:path";
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { failedOf, hasApiKey, isScratch } from "./hook.ts";
+import { failedOf, hasApiKey } from "./jev-checks.ts";
+import { isScratch } from "./scratch-path.ts";
 import { repositoryOf } from "./repository.ts";
 
 const SCRIPT_FILE =

@@ -2,7 +2,7 @@ import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 import { collectToolCalls, fitState, type Message } from "fast-jev-compaction";
 
-import { type Checks, failedOf, hasApiKey } from "./hook.ts";
+import { type Checks, failedOf, hasApiKey } from "./jev-checks.ts";
 import { entriesOf, messagesOf, stopFeedbackOf } from "./transcript.ts";
 
 const CHANGING_TOOLS = new Set(["Write", "Edit", "MultiEdit", "NotebookEdit", "Bash"]);

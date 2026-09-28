@@ -3,7 +3,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { clientOf, hasApiKey, isScratch, THRESHOLD } from "./hook.ts";
+import { clientOf, hasApiKey, THRESHOLD } from "./jev-checks.ts";
+import { isScratch } from "./scratch-path.ts";
 import { entriesOf, instructionOf } from "./transcript.ts";
 
 const LIMIT = 6000;

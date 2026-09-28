@@ -4,7 +4,8 @@ import { basename, dirname, join, relative } from "node:path";
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { type Checks, CONFIG_DIR, failedOf, hasApiKey, isScratch } from "./hook.ts";
+import { type Checks, failedOf, hasApiKey } from "./jev-checks.ts";
+import { CONFIG_DIR, isScratch } from "./scratch-path.ts";
 import { aiJapanese } from "./japanese.ts";
 import { repositoryOf } from "./repository.ts";
 

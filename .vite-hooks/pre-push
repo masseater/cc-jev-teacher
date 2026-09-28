@@ -1,0 +1,12 @@
+# jev-lint blocks only on a rule with `severity: error`; exit 3 (requests failed) does not block.
+if [ -z "$TYPESAFE_API_KEY" ] && [ -z "$TYPESAFEAI_API_KEY" ]; then
+  echo "jev-lint: no API key in the environment, skipping the commit review" >&2
+  exit 0
+fi
+if ! git rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1; then
+  echo "jev-lint: no upstream for this branch yet, skipping the commit review" >&2
+  exit 0
+fi
+bun node_modules/.bin/jev-lint commits '@{upstream}..HEAD' --fail-on error
+status=$?
+[ "$status" -eq 0 ] || [ "$status" -eq 3 ] || exit "$status"

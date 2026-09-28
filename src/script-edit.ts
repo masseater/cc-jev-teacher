@@ -1,7 +1,7 @@
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { failedOf, hasApiKey } from "./hook.ts";
+import { failedOf, hasApiKey } from "./jev-checks.ts";
 
 const hook = defineHook({
   trigger: { PreToolUse: { Bash: true } },
