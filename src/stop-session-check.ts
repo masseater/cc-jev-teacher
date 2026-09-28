@@ -3,7 +3,7 @@ import { defineHook, runHook } from "cc-hooks-ts";
 import { collectToolCalls, fitState } from "fast-jev-compaction";
 
 import { type Checks, failedOf, hasApiKey } from "./hook.ts";
-import { messagesOf } from "./transcript.ts";
+import { entriesOf, messagesOf, stopFeedbackOf } from "./transcript.ts";
 
 const CHANGING_TOOLS = new Set(["Write", "Edit", "MultiEdit", "NotebookEdit", "Bash"]);
 const RECENT = 6;
@@ -30,7 +30,12 @@ const hook = defineHook({
   shouldRun: hasApiKey,
   run: async (context) => {
     const { input } = context;
-    if (input.stop_hook_active) return context.success();
+    // Each reason is given at most once per turn.
+    const given = stopFeedbackOf(entriesOf(input.transcript_path));
+    const pending: Checks = Object.fromEntries(
+      Object.entries(checks).filter(([, check]) => !given.includes(check.reason)),
+    );
+    if (Object.keys(pending).length === 0) return context.success();
     const messages = messagesOf(input.transcript_path);
     if (!messages.some((message) => message.toolUses.some((use) => CHANGING_TOOLS.has(use.tool))))
       return context.success();
@@ -45,7 +50,7 @@ const hook = defineHook({
           "`history` is a whole coding-assistant session, oldest first. Tool outputs are replaced by a short note and long texts may be abridged.",
         history: JSON.stringify(history),
       },
-      checks,
+      pending,
     );
     if (failed.length === 0) return context.success();
     return context.blockingError(`セッション全体を見直してください。\n${failed.join("\n")}`);

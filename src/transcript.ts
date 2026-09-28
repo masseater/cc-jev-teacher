@@ -9,6 +9,7 @@ const maybe = <T extends v.GenericSchema>(schema: T) => v.fallback(v.optional(sc
 const Entry = v.looseObject({
   type: maybe(v.string()),
   isMeta: maybe(v.boolean()),
+  isCompactSummary: maybe(v.boolean()),
   message: maybe(v.looseObject({ role: maybe(v.string()), content: v.optional(v.unknown()) })),
   attachment: v.optional(v.unknown()),
 });
@@ -58,7 +59,13 @@ const textOf = (content: unknown) =>
     .join("\n");
 
 const promptOf = (entry: Entry) => {
-  if (entry.type !== "user" || entry.isMeta || entry.message?.role !== "user") return null;
+  if (
+    entry.type !== "user" ||
+    entry.isMeta ||
+    entry.isCompactSummary ||
+    entry.message?.role !== "user"
+  )
+    return null;
   const text = textOf(entry.message.content).trim();
   return text && !text.startsWith("<") && !text.startsWith("Stop hook feedback") ? text : null;
 };
@@ -113,6 +120,14 @@ export const instructionOf = (entries: Array<Entry>) =>
         : turn;
     }, [])
     .join("\n\n");
+
+// Feedback that Stop hooks already gave during the current turn.
+export const stopFeedbackOf = (entries: Array<Entry>) =>
+  entries
+    .filter((entry) => entry.type === "user")
+    .map((entry) => textOf(entry.message?.content))
+    .filter((text) => text.startsWith("Stop hook feedback"))
+    .join("\n");
 
 export const toolUsesOf = (entries: Array<Entry>) =>
   entries

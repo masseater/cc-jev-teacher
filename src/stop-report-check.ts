@@ -3,7 +3,7 @@ import { defineHook, runHook } from "cc-hooks-ts";
 
 import { clientOf, hasApiKey, THRESHOLD } from "./hook.ts";
 import { aiJapanese } from "./japanese.ts";
-import { entriesOf, instructionOf, searchedOf, toolUsesOf } from "./transcript.ts";
+import { entriesOf, instructionOf, searchedOf, stopFeedbackOf, toolUsesOf } from "./transcript.ts";
 
 const questions = {
   unfinished: noul(
@@ -50,12 +50,8 @@ const questions = {
   aiJapanese: aiJapanese.question,
 };
 
-// Asked again on a retry after feedback; only the checks built on these run then.
-const retryQuestions = {
-  english: questions.english,
-  askedEnglish: questions.askedEnglish,
-  aiJapanese: questions.aiJapanese,
-};
+// Checks that may be given again in the same turn; every other reason is given at most once per turn.
+const repeatable = new Set(["english", "aiJapanese"]);
 
 type Question = keyof typeof questions;
 
@@ -150,15 +146,16 @@ const hook = defineHook({
         report,
         memory_writes: memoryWritesOf(toolUses) || "(none)",
       },
-      questions: input.stop_hook_active ? retryQuestions : questions,
+      questions,
     });
+    const given = stopFeedbackOf(entries);
     const scores: Partial<Record<Question, { noul: number }>> = answers;
     const verdict: Verdict = {
       searched: searchedOf(toolUses),
       hit: (key) => (scores[key]?.noul ?? 0) >= (thresholds[key] ?? THRESHOLD),
     };
     const failed = Object.entries(checks)
-      .filter(([key]) => !input.stop_hook_active || key in retryQuestions)
+      .filter(([key, check]) => repeatable.has(key) || !given.includes(check.reason))
       .filter(([key, check]) =>
         check.failed ? check.failed(verdict) : verdict.hit(key as Question),
       )
