@@ -1,0 +1,17 @@
+{
+  "name": "jev",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/config-relax.ts src/existing-solution.ts src/script-edit.ts src/stop-report-check.ts --bundle --platform=node --format=esm --target=node20 --outdir=dist --out-extension:.js=.mjs",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@typesafe-ai/sdk": "0.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^5.9.0"
+  }
+}

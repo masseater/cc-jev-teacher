@@ -1,0 +1,19 @@
+{
+  "name": "jev",
+  "version": "0.1.0",
+  "description": "Hooks that use TypeSafe to block script edits, unrequested config relaxation, building without searching for existing solutions, and incomplete or verbose final reports",
+  "author": {
+    "name": "masseater"
+  },
+  "repository": "https://github.com/masseater/jev",
+  "license": "MIT",
+  "userConfig": {
+    "typesafe_api_key": {
+      "type": "string",
+      "title": "TypeSafe API key",
+      "description": "API key for https://typesafe.ai, used to judge tool calls and reports",
+      "sensitive": true,
+      "required": true
+    }
+  }
+}

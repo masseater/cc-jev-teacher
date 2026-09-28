@@ -1,0 +1,14 @@
+{
+  "name": "jev",
+  "description": "The jev hooks plugin",
+  "owner": {
+    "name": "masseater"
+  },
+  "plugins": [
+    {
+      "name": "jev",
+      "source": "./",
+      "description": "TypeSafe-backed hooks that keep Claude Code working until the report is done"
+    }
+  ]
+}
