@@ -50,7 +50,7 @@ const hook = defineHook({
             "Does `written` name a domain concept of the project (see `purpose` and `glossary`) by what the code does to it, such as a name built from Processor, Handler, Manager, Data, Info, or handle/process/do, instead of by what the concept is called in the domain? Also count names that use a different word for a concept `glossary` already names. Code whose subject is the mechanism itself (HTTP, database, CLI, file system, framework glue, generic utilities), and names that `written` only uses without defining, do not count.",
           ),
           reason:
-            "業務の概念を、コードが何をするかで名付けています。業務の話とコードを突き合わせられるよう、その概念が業務で何と呼ばれるかで名付けてください。",
+            "業務の概念を、コードが何をするかで名付けています。業務の話とコードを突き合わせられるよう、その概念が業務で何と呼ばれるかで名付けてください。domain-naming スキルに従ってください。",
         },
         complexValidation: {
           question: noul(
