@@ -12,11 +12,11 @@ description: "AI特有の日本語クリシェ (羅針盤・心臓部・シナ�
 
 1. 対象を決める。引数のファイル、なければ直前に書いた文章。
 2. 機械チェックを先に回す:
-   `bun "${CLAUDE_PLUGIN_ROOT}/vendor/dead-cliche/src/cli.mjs" check <対象ファイル> --preset <paper|business|chat>`
+   `bun "${CLAUDE_PLUGIN_ROOT}/node_modules/.bin/dead-cliche" check <対象ファイル> --preset <paper|business|chat>`
    (ファイルがない文章はstdinに流す。プリセットは文書の性質で選ぶ。既定はpaper)
    ここで出た違反は自分で再判定せず、すべて修正対象に入れる。
 3. 機械検出できないルールを人力で確認する:
-   `bun "${CLAUDE_PLUGIN_ROOT}/vendor/dead-cliche/src/cli.mjs" list --manual`
+   `bun "${CLAUDE_PLUGIN_ROOT}/node_modules/.bin/dead-cliche" list --manual`
    (体言止めの連打、三点リスト癖、太字の散布、かぎかっこの強調転用など)
 4. 各違反を、ルールのask (何を書くべきかの問い) に答える形で書き直す。
    ルールの詳細は `explain <rule-id>` で引く。

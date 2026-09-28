@@ -46,7 +46,7 @@ Stop hook feedback:
 
 The hooks check Claude's tool calls, the documents it writes, and its reports, and block with feedback when one falls short, such as editing a file with `sed -i`. TypeSafe Jev makes every judgment; the questions live under `src/`, and the feedback points Claude to the skills under `skills/`.
 
-`dead-cliche-writing` and its checker in `vendor/dead-cliche` come from [BoxPistols/ux-writing-dead-cliche](https://github.com/BoxPistols/ux-writing-dead-cliche) (MIT).
+The `dead-cliche-writing` skill comes from [BoxPistols/ux-writing-dead-cliche](https://github.com/BoxPistols/ux-writing-dead-cliche) (MIT) and runs its checker from the npm package `textlint-rule-ux-writing-dead-cliche`.
 
 ## Workflow
 
@@ -69,16 +69,6 @@ The hooks check Claude's tool calls, the documents it writes, and its reports, a
 Without a key every hook does nothing.
 
 The feedback messages are in Japanese and encode the author's working rules (for example, no `localhost` URLs because the author works over SSH). Fork the repository to change them.
-
-## Contributing
-
-Bug reports and ideas are welcome in [Issues](https://github.com/masseater/cc-jev-teacher/issues). To work on the hooks:
-
-```sh
-bun install
-bun run typecheck
-claude --plugin-dir .
-```
 
 ## License
 

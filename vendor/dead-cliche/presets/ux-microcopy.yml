@@ -1,7 +1,0 @@
-name: ux-microcopy
-description: UIテキスト・マイクロコピー向け。画面文言の規範と書式チェックだけを有効にする。
-include:
-  - ux-microcopy
-  - formatting
-overrides: {}
-disable: []

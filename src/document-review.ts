@@ -32,7 +32,8 @@ const proseChecks: Checks = {
     question: noul(
       "Does `document` only restate or paraphrase what other documentation (`other_documents`, official docs, or elsewhere in the same document) already says?",
     ),
-    reason: "ほかのドキュメントの言い換えになっている箇所があります。書かずに参照先を示してください。",
+    reason:
+      "ほかのドキュメントの言い換えになっている箇所があります。書かずに参照先を示してください。",
   },
 };
 

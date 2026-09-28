@@ -13,5 +13,5 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile --ignore-scripts
       - run: bun run typecheck
-      - run: bun vendor/dead-cliche/src/cli.mjs check skills/{measure-everything,dont-it-yourself}/{,references/}*.md --preset paper
+      - run: bun node_modules/.bin/dead-cliche check skills/{measure-everything,dont-it-yourself}/{,references/}*.md --preset paper
       - run: bunx @anthropic-ai/claude-code plugin validate .
