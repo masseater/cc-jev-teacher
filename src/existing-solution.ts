@@ -22,7 +22,7 @@ const hook = defineHook({
             "Does the instruction ask the assistant to build something new, such as a feature, tool, script, hook, library, or mechanism, rather than only fixing a bug, changing settings, explaining, proposing, or investigating?",
           ),
           reason:
-            "新しく作る前に、既存のソリューション（ライブラリ・CLI・サービス・スキル・MCP）がこの世に無いかを調べてください。dont-it-yourself スキルに従い、検索して原文を読み、使えるものが無いと確かめてから作ってください。",
+            "作る手間と保守を減らすため、新しく作る前に既存のソリューションが無いかを調べ、使えるものが無いと確かめてから作ってください。dont-it-yourself スキルに従ってください。",
         },
       },
     );

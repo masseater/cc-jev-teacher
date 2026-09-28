@@ -1,4 +1,4 @@
-# 🧑‍🏫 cc-jev-teacher
+# cc-jev-teacher
 
 **A Claude Code plugin that sends Claude back to work until the job is actually done.**
 
@@ -56,15 +56,15 @@ The `dead-cliche-writing` skill comes from [BoxPistols/ux-writing-dead-cliche](h
 
 ## Compatibility
 
-- ✅ Claude Code with plugin support
-- ✅ macOS and Linux
+- Claude Code with plugin support
+- macOS and Linux
 - [Bun](https://bun.sh) on `PATH` (hooks run as TypeScript on Bun, and Claude Code installs the plugin's dependencies with `bun install`)
 
 ## Configuration
 
-| Option | Required | Description |
-| --- | --- | --- |
-| `typesafe_api_key` | Yes | Your TypeSafe API key. Stored in the OS credential store and passed to hooks as `CLAUDE_PLUGIN_OPTION_TYPESAFE_API_KEY`. `TYPESAFE_API_KEY` in the environment also works. |
+| Option             | Required | Description                                                                                                                                                                |
+| ------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `typesafe_api_key` | Yes      | Your TypeSafe API key. Stored in the OS credential store and passed to hooks as `CLAUDE_PLUGIN_OPTION_TYPESAFE_API_KEY`. `TYPESAFE_API_KEY` in the environment also works. |
 
 Without a key every hook does nothing.
 

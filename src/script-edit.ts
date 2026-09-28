@@ -19,7 +19,7 @@ const hook = defineHook({
             "Does this shell command change the contents of source code or document files through a script (sed -i, perl -pi, python or node code, heredoc or redirection into a file) instead of editing them directly? Writing only to temporary or scratch directories, lock files, or generated output does not count.",
           ),
           reason:
-            "数ファイル程度の編集にスクリプトを使っています。Edit / Write ツールで直接編集してください。",
+            "数ファイル程度の編集にスクリプトを使っています。変更が見えて確かめられるよう、ファイルを直接編集してください。",
         },
       },
     );

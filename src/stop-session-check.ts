@@ -14,14 +14,14 @@ const checks: Checks = {
       "Looking at every change the assistant made to code, config, or documents in this session, did it pile up local patches (special cases, extra branches, flags, options, wrappers, retries, duplicated logic, or more and more text) where simplifying the whole would have been better, such as removing code or rules that became unnecessary, merging duplicates, or restructuring so the result is smaller overall, and has that simplification still not been done by the end of the session? Sessions that changed nothing do not count.",
     ),
     reason:
-      "変更が局所的な継ぎ足し（特別扱い、分岐、フラグ、ラッパー、重複など）になっています。セッション全体の変更を見直し、要らなくなったものを消す、重複をまとめる、構造を組み替えるなどして、全体をシンプルにしてください。",
+      "変更が局所的な継ぎ足し（特別扱い、分岐、フラグ、ラッパー、重複など）になっています。全体を小さく保てるよう、セッション全体の変更を見直して、全体をシンプルにしてください。",
   },
   unverifiedVersion: {
     question: noul(
       "Did the assistant add or update a dependency in a manifest or lockfile (package.json, bun.lock, pnpm-lock.yaml, requirements.txt, pyproject.toml, Cargo.toml, go.mod, Gemfile, and so on) without, somewhere in this session, checking the library's latest version from a live source (a registry query such as `npm view <name> version`, the release page, or a web search) and using that version? Installing with a command that resolves the latest version itself (such as `bun add <name>` without a version) counts as checked.",
     ),
     reason:
-      "依存を追加・更新したのに、そのライブラリの最新バージョンを調べていません。`npm view <name> version` やリリースページで最新版を確かめ、最新版にしてください。",
+      "依存を追加・更新したのに、そのライブラリが最新かを調べていません。古い版を持ち込まないよう、最新版を確かめてから入れてください。",
   },
 };
 

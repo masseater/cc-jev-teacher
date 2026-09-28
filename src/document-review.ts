@@ -26,7 +26,7 @@ const proseChecks: Checks = {
       "Does `document` tell the reader to follow or read another skill by pointing to that skill's SKILL.md or skill directory by path (for example `.claude/skills/<name>` or `skills/<name>/SKILL.md`) where naming the skill (「<name> スキル」) would do? Paths to scripts, checkers, or data files that a command runs or reads do not count.",
     ),
     reason:
-      "スキルをファイルパスで指しています。「<name> スキル」のようにスキル名で書き直してください。",
+      "スキルをファイルパスで指しています。置き場所が変わっても参照が切れないよう、スキル名で指してください。",
   },
   restates: {
     question: noul(
@@ -43,7 +43,7 @@ const skillChecks: Checks = {
       "Does the skill in `document` lack a YAML frontmatter block at the very top (between --- lines) that has both a non-empty `name` and a non-empty `description` saying when to use the skill?",
     ),
     reason:
-      "ファイルの先頭に --- で囲んだ frontmatter を置き、name と、どんなときに使うスキルかを書いた description を入れてください。",
+      "スキルがいつ使われるかを判断できるよう、frontmatter に名前と使う場面を書いてください。",
   },
   reasons: {
     question: noul(
@@ -64,7 +64,7 @@ const skillChecks: Checks = {
       "Does the skill in `document` carry details beyond the principles and the steps to follow, such as lists of libraries or options, file paths, function names, config values, lookup tables, or long examples, instead of moving them to files under `references/` in the skill's directory and pointing to those files? The steps themselves, and the command a step runs, do not count.",
     ),
     reason:
-      "SKILL.md には考え方と手順だけを書いてください。ライブラリや選択肢の一覧、パス、関数名、設定値、対応表、例などの細かい内容は references/ のファイルに移し、SKILL.md からそのファイルを指してください。",
+      "細かい内容が SKILL.md にあります。考え方と手順がすぐ読み取れるよう、細かい内容は references/ に分けて、そこを指してください。",
   },
 };
 
@@ -74,7 +74,7 @@ const docChecks: Checks = {
       "Does `document` describe things a reader could learn by reading the code or config, such as the directory or file layout, what each file or function does, function signatures, types, config values, dependency lists, or the list of scripts in package.json? Instructions for users of the project (how to install, how to configure, what it does for them), decisions and conventions that the code cannot show, and pointers to files by path do not count.",
     ),
     reason:
-      "コードや設定を見れば分かること（ファイルの構成、各ファイルや関数が何をするか、型、設定値、依存やスクリプトの一覧など）が書かれています。そこは、コードを見ても分からないこと（なぜそうしたのか、どう使うのか、守る決まり）を書く形に直し、細かいことは該当するファイルのパスで示してください。",
+      "コードや設定を見れば分かること（ファイルの構成、各ファイルや関数が何をするか、型、設定値、依存やスクリプトの一覧など）が書かれています。コードと食い違って古くならないよう、コードを見ても分からないこと（なぜそうしたのか、どう使うのか、守る決まり）を書く形に直し、細かいことは該当する場所を指してください。",
   },
   enumerates: {
     question: noul(
