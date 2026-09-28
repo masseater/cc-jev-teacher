@@ -14,7 +14,6 @@
 - [Workflow](#workflow)
 - [Compatibility](#compatibility)
 - [Configuration](#configuration)
-- [Files](#files)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -62,15 +61,17 @@ Stop hook feedback:
 | 🔍 `existing-solution` | starts building something new without first searching for an existing library, CLI, service, or skill |
 | 🔒 `config-relax` | disables or loosens a setting, lint rule, check, or limit you did not ask to loosen |
 | 🧩 `skill-review` | writes a `SKILL.md` that lacks `name` / `description`, references missing files, explains reasons nobody needs, carries filler, or copies other docs instead of pointing to them |
+| 📚 `doc-review` | writes things into `README.md`, `AGENTS.md`, or `CLAUDE.md` that anyone could learn by reading the code |
 | 🗾 `natural-japanese` | writes Markdown or text in AI-sounding Japanese such as 「〜は〜で、〜ではない」 |
 | 📝 `stop-report-check` | reports with work unfinished or unverified, test data left behind, a symptom-only fix, no recurrence prevention, guessed numbers, needless permission requests, unchecked external facts, AI-sounding Japanese, English prose, or too many words |
 
 Every judgment is made by TypeSafe Jev. The hooks only decide locally whether a tool call is worth sending (for example, whether a file is a `SKILL.md`).
 
-It also ships two skills:
+It also ships three skills:
 
 - 📦 `dont-it-yourself` — look for an existing library, CLI, or service before writing code; `existing-solution` points Claude here
 - 📏 `measure-everything` — never swallow failures, and back every claim about causes, frequency, or latency with measured numbers
+- 🗾 `dead-cliche-writing` — find the clichés AI brings into Japanese and rewrite them plainly, with its checker in `vendor/dead-cliche`; vendored from [BoxPistols/ux-writing-dead-cliche](https://github.com/BoxPistols/ux-writing-dead-cliche) (MIT), and `natural-japanese` / `stop-report-check` point Claude here
 
 ## How It Triggers
 
@@ -79,7 +80,7 @@ It also ships two skills:
 | `PreToolUse` | `Bash` | `script-edit` |
 | `PreToolUse` | `Write` | `existing-solution` |
 | `PreToolUse` | `Write` \| `Edit` | `config-relax` |
-| `PostToolUse` | `Write` \| `Edit` | `skill-review` (`SKILL.md` only), `natural-japanese` (`.md` / `.mdx` / `.txt` only) |
+| `PostToolUse` | `Write` \| `Edit` | `skill-review` (`SKILL.md` only), `natural-japanese` (`.md` / `.mdx` / `.txt` only), `doc-review` (`README.md` / `AGENTS.md` / `CLAUDE.md` only) |
 | `Stop` | | `stop-report-check` |
 
 ## Workflow
@@ -92,9 +93,7 @@ It also ships two skills:
 
 - ✅ Claude Code with plugin support
 - ✅ macOS and Linux
-- Node.js 26 or later on `PATH` (hooks run as TypeScript through Node's type stripping)
-- Bun on `PATH` (Claude Code installs the plugin's dependencies with `bun install`)
-
+- [Bun](https://bun.sh) on `PATH` (hooks run as TypeScript on Bun, and Claude Code installs the plugin's dependencies with `bun install`)
 ## Configuration
 
 | Option | Required | Description |
@@ -105,21 +104,9 @@ Without a key every hook does nothing.
 
 The feedback messages are in Japanese and encode the author's working rules (for example, no `localhost` URLs because the author works over SSH). Fork the repository to change them.
 
-## Files
-
-```
-cc-jev-teacher/
-├── .claude-plugin/
-│   ├── plugin.json           # Plugin manifest and the API key option
-│   └── marketplace.json      # Lets `claude plugin marketplace add` find the plugin
-├── hooks/hooks.json          # Event → hook wiring
-├── skills/                   # Bundled skills: dont-it-yourself, measure-everything
-└── src/                      # Hooks, typed with cc-hooks-ts
-```
-
 ## Contributing
 
-Bug reports and ideas are welcome in [Issues](https://github.com/masseater/cc-jev-teacher/issues). To work on the hooks:
+Bug reports and ideas are welcome in [Issues](https://github.com/masseater/cc-jev-teacher/issues). To change which event runs which hook, start from `hooks/hooks.json`; each hook's questions and feedback live in the matching file under `src/`. To work on the hooks:
 
 ```sh
 bun install

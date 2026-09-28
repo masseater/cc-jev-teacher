@@ -2,18 +2,16 @@
   "name": "cc-jev-teacher",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=26"
-  },
   "scripts": {
     "typecheck": "tsc"
   },
   "dependencies": {
     "@typesafe-ai/sdk": "0.6.0",
-    "cc-hooks-ts": "2.1.281"
+    "cc-hooks-ts": "2.1.281",
+    "js-yaml": "^4.1.0"
   },
   "devDependencies": {
-    "@types/node": "^26.6.3",
+    "@types/bun": "^1.4.2",
     "typescript": "^7.0.2"
   }
 }

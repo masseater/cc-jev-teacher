@@ -1,0 +1,422 @@
+#!/usr/bin/env node
+// dead-cliche CLI。
+//   dead-cliche check [files...] [--preset name] [--format pretty|json] [--min-severity warn]
+//   dead-cliche list [--preset name] [--manual]
+//   dead-cliche explain <rule-id>
+//   dead-cliche claude-hook   (Claude CodeのPostToolUseフックからstdin JSONで呼ばれる)
+//   dead-cliche ui [--port 7777] [--file .deadcliche/custom-rules.yml]
+
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
+import os from 'node:os';
+import crypto from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { loadAllRules, loadPreset, rulesForPreset, findRc, loadCustomRules, applyRcRuleConfig, PACKAGE_ROOT } from './load-rules.mjs';
+import { check, maskMarkdownCode, hasErrors, applyFixes } from './engine.mjs';
+
+const MD_EXT = new Set(['.md', '.mdx', '.markdown']);
+const TEXT_EXT = new Set([...MD_EXT, '.txt']);
+
+function parseArgs(argv) {
+  const args = { _: [], flags: {} };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a.startsWith('--')) {
+      const key = a.slice(2);
+      if (['preset', 'format', 'min-severity', 'rules-dir', 'fail-on', 'port', 'file'].includes(key)) {
+        const value = argv[i + 1];
+        // 値を落とすと既定値で走ってしまう (--port だけ書いて7777で立つ等)。指定漏れは止める
+        if (value === undefined || value.startsWith('--')) {
+          console.error(`--${key} には値が要ります`);
+          process.exit(2);
+        }
+        args.flags[key] = value;
+        i++;
+      } else {
+        args.flags[key] = true;
+      }
+    } else {
+      args._.push(a);
+    }
+  }
+  return args;
+}
+
+function getRules({ preset, rulesDir }) {
+  const all = loadAllRules(rulesDir);
+  if (!preset) return all;
+  return rulesForPreset(loadPreset(preset), all);
+}
+
+function checkText(text, filePath, rules) {
+  const masked = filePath && MD_EXT.has(path.extname(filePath)) ? maskMarkdownCode(text) : text;
+  return check(masked, rules);
+}
+
+function printPretty(file, violations) {
+  for (const v of violations) {
+    console.log(`${file}:${v.line}:${v.col} ${v.severity} ${v.ruleId} 「${v.matched.replace(/\n/g, '\\n')}」`);
+    console.log(`  なぜ: ${v.why}`);
+    console.log(`  直す: ${v.ask}`);
+  }
+}
+
+function cmdCheck(args) {
+  const files = args._;
+  const results = [];
+  let total = 0;
+  let errors = 0;
+
+  const run = (text, displayName, filePath) => {
+    const rc = filePath ? findRc(path.dirname(path.resolve(filePath))) : findRc(process.cwd());
+    if (rc?.ignore && filePath) {
+      const rel = path.relative(rc._dir, path.resolve(filePath));
+      if (rc.ignore.some((pat) => rel.startsWith(pat) || rel.includes(`/${pat}`))) return;
+    }
+    const preset = args.flags.preset ?? rc?.preset ?? 'paper';
+    const rules = applyRcRuleConfig([...getRules({ preset, rulesDir: args.flags['rules-dir'] }), ...loadCustomRules(rc)], rc);
+    let violations = checkText(text, filePath, rules);
+    const min = args.flags['min-severity'];
+    if (min) {
+      const order = { info: 0, warn: 1, error: 2 };
+      violations = violations.filter((v) => order[v.severity] >= order[min]);
+    }
+    total += violations.length;
+    errors += violations.filter((v) => v.severity === 'error').length;
+    results.push({ file: displayName, violations });
+    if ((args.flags.format ?? 'pretty') === 'pretty') printPretty(displayName, violations);
+  };
+
+  if (files.length === 0 || (files.length === 1 && files[0] === '-')) {
+    const text = fs.readFileSync(0, 'utf8');
+    run(text, '(stdin)', null);
+  } else {
+    for (const f of files) {
+      // 指定を誤ったときに生のスタックトレースを出さない
+      if (!fs.existsSync(f)) {
+        console.error(`${f} が見つかりません`);
+        process.exit(2);
+      }
+      if (fs.statSync(f).isDirectory()) {
+        console.error(`${f} はディレクトリです。ファイルを指定してください (例: ${f}/*.md)`);
+        process.exit(2);
+      }
+      run(fs.readFileSync(f, 'utf8'), f, f);
+    }
+  }
+
+  const counts = { error: 0, warn: 0, info: 0 };
+  for (const r of results) for (const v of r.violations) counts[v.severity]++;
+  if ((args.flags.format ?? 'pretty') === 'json') {
+    // 出力の形は互換を保つ (判定に使う側は表示文言ではなくこちらを見る)
+    console.log(JSON.stringify({ results, total, errors, counts }, null, 2));
+  } else if (total === 0) {
+    console.log('既知のパターンは見つかりませんでした (辞書にある表現の有無だけを見ています)');
+  } else {
+    console.log(`\n${total} 件 (error ${errors} 件)`);
+    // 書式の検出は1件のルールで大量に当たり、文章の指摘を件数で押し流す。
+    // 先に fix を通せば残りが読める量になることを、その場で伝える
+    const fixable = results.reduce((n, r) => n + r.violations.filter((v) => v.fix !== undefined).length, 0);
+    if (fixable > 0 && total - fixable > 0) {
+      console.log(`うち ${fixable} 件は dead-cliche fix --write で自動修正できます。先に実行すると残り ${total - fixable} 件が読みやすくなります`);
+    }
+  }
+  // errorとwarnは修正必須 (既定)。--fail-on error で従来挙動、--fail-on info で全件必須にできる
+  const order = { info: 0, warn: 1, error: 2 };
+  // --strict は info まで含めて落とす (--fail-on info と同じ)
+  const failOn = args.flags.strict ? order.info : (order[args.flags['fail-on']] ?? order.warn);
+  const failing = results.reduce((n, r) => n + r.violations.filter((v) => order[v.severity] >= failOn).length, 0);
+  process.exit(failing > 0 ? 1 : 0);
+}
+
+function cmdList(args) {
+  const rules = getRules({ preset: args.flags.preset, rulesDir: args.flags['rules-dir'] });
+  for (const r of rules) {
+    if (args.flags.manual && !r.manual) continue;
+    const kind = r.manual ? 'manual' : 'auto';
+    console.log(`${r.id}\t${r.severity}\t${kind}\t${r.why}`);
+  }
+}
+
+function cmdExplain(args) {
+  const id = args._[0];
+  if (!id) {
+    console.error('使い方: dead-cliche explain <rule-id>');
+    process.exit(2);
+  }
+  const rule = loadAllRules(args.flags['rules-dir']).find((r) => r.id === id);
+  if (!rule) {
+    console.error(`ルールが見つかりません: ${id}`);
+    process.exit(2);
+  }
+  console.log(`id: ${rule.id}`);
+  console.log(`severity: ${rule.severity}${rule.manual ? ' (manual: 機械検出なし)' : ''}`);
+  console.log(`なぜ: ${rule.why}`);
+  console.log(`直す: ${rule.ask}`);
+  for (const b of rule.examples.bad) console.log(`  悪い例: ${b}`);
+  for (const g of rule.examples.good) console.log(`  良い例: ${g}`);
+  for (const d of rule.deny_examples ?? []) console.log(`  検出しない例: ${d}`);
+}
+
+// Claude Code PostToolUseフック。失敗しても編集を妨げない (常に握りつぶしてexit 0)。
+// Bashコマンド文字列から、書き込まれた可能性のある文書パスを拾う。
+// bypass permissionsのセッションはheredocで書くため、Write|Editだけでは素通りする。
+function extractPathsFromCommand(command, cwd) {
+  const found = new Set();
+  const re = new RegExp("[^\\s'\"`;|&()<>]+\\.(?:md|mdx|markdown|txt)\\b", 'g');
+  for (const m of String(command).matchAll(re)) {
+    const token = m[0];
+    if (/^https?:/.test(token)) continue;
+    const expanded = token.startsWith('~/') ? path.join(process.env.HOME ?? '', token.slice(2)) : token;
+    const abs = path.isAbsolute(expanded) ? expanded : path.resolve(cwd, expanded);
+    try {
+      if (!fs.existsSync(abs)) continue;
+      const st = fs.statSync(abs);
+      // 言及されただけのファイル (sedで読んだ等) を検査しない。直近に書き込まれたものだけを対象にする
+      if (st.isFile() && Date.now() - st.mtimeMs < 120_000) found.add(abs);
+    } catch {}
+  }
+  return [...found];
+}
+
+// 個人の設定・記憶ファイルは共有目的の文書ではないため、フックの既定では検査しない
+// (CLI での明示的な check は従来どおり通る)
+const HOOK_SKIP_PREFIXES = [
+  path.join(process.env.HOME ?? '', '.claude') + path.sep,
+  path.join(process.env.HOME ?? '', '.claude-memory') + path.sep,
+];
+
+function hookSkipped(filePath) {
+  return HOOK_SKIP_PREFIXES.some((prefix) => filePath.startsWith(prefix));
+}
+
+// フックは今回書いた行だけを検査する。既存の文書は書き手の判断で残している文面なので、
+// ファイル全体を検査すると既存行の違反まで「書き直してください」と差し戻してしまう。
+// gitで追跡しているファイルは HEAD との差分の追加行だけを返す。追跡外・新規・gitの外では null (全体を検査)。
+// DEAD_CLICHE_HOOK_ALL=1 で従来どおりファイル全体を検査する。
+function changedLines(filePath) {
+  if (process.env.DEAD_CLICHE_HOOK_ALL === '1') return null;
+  const dir = path.dirname(filePath);
+  const git = (args) => execFileSync('git', ['-C', dir, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 5000 });
+  try {
+    git(['ls-files', '--error-unmatch', '--', filePath]);
+    git(['rev-parse', '--verify', 'HEAD']);
+  } catch {
+    return null;
+  }
+  let diff;
+  try {
+    diff = git(['diff', '--no-color', '--no-ext-diff', '-U0', 'HEAD', '--', filePath]);
+  } catch {
+    return null;
+  }
+  const lines = new Set();
+  for (const m of diff.matchAll(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/gm)) {
+    const start = Number(m[1]);
+    const count = m[2] === undefined ? 1 : Number(m[2]);
+    for (let i = 0; i < count; i++) lines.add(start + i);
+  }
+  return lines;
+}
+
+function onlyChanged(filePath, violations) {
+  const lines = changedLines(filePath);
+  if (!lines) return violations;
+  // 一致が改行をまたぐと v.line は開始行だけを指す。追加行にかかる違反は残す
+  return violations.filter((v) => {
+    const endLine = v.line + (v.matched.match(/\n/g) ?? []).length;
+    for (let line = v.line; line <= endLine; line++) {
+      if (lines.has(line)) return true;
+    }
+    return false;
+  });
+}
+
+function hookCheckFile(filePath) {
+  if (hookSkipped(filePath)) return [];
+  const rc = findRc(path.dirname(filePath));
+  if (rc?.ignore) {
+    const rel = path.relative(rc._dir, filePath);
+    if (rc.ignore.some((pat) => rel.startsWith(pat) || rel.includes(`/${pat}`))) return [];
+  }
+  const rules = applyRcRuleConfig([...getRules({ preset: rc?.preset ?? 'paper' }), ...loadCustomRules(rc, { warn: () => {} })], rc);
+  const text = fs.readFileSync(filePath, 'utf8');
+  return onlyChanged(filePath, checkText(text, filePath, rules)).map((v) => ({ ...v, file: path.basename(filePath) }));
+}
+
+// プラグインとグローバル設定の両方にフックがある環境で、同じ検査が二重に返るのを防ぐ。
+// セッション・対象・内容が同じ直近の発火はスキップする。
+function hookDedup(sessionId, files) {
+  try {
+    const sig = files.map((f) => {
+      const st = fs.statSync(f);
+      return `${f}:${st.mtimeMs}:${st.size}`;
+    }).join('|');
+    const key = crypto.createHash('sha1').update(`${sessionId}|${sig}`).digest('hex');
+    const marker = path.join(os.tmpdir(), `dead-cliche-hook-${key}`);
+    if (fs.existsSync(marker) && Date.now() - fs.statSync(marker).mtimeMs < 10_000) return true;
+    fs.writeFileSync(marker, '');
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function cmdClaudeHook() {
+  let input;
+  try {
+    input = JSON.parse(fs.readFileSync(0, 'utf8'));
+  } catch {
+    process.exit(0);
+  }
+  try {
+    if (input?.tool_name === 'Bash' || (!input?.tool_input?.file_path && input?.tool_input?.command)) {
+      const files = extractPathsFromCommand(input?.tool_input?.command ?? '', input?.cwd ?? process.cwd());
+      if (files.length && hookDedup(input?.session_id ?? '', files)) process.exit(0);
+      const all = files.flatMap((f) => {
+        try { return hookCheckFile(f); } catch { return []; }
+      }).filter((v) => v.severity !== 'info'); // errorとwarnは修正必須、infoは止めない
+      if (all.length === 0) process.exit(0);
+      const lines = all.slice(0, 15).map((v) => `- ${v.file}:${v.line} [${v.ruleId}] 「${v.matched.replace(/\n/g, '\\n')}」 → ${v.ask}`);
+      console.error(
+        `dead-cliche: Bash で書かれた文書にクリシェがあります (${all.length} 件)。意味を保ったまま書き直してください。\n` + lines.join('\n')
+      );
+      process.exit(2);
+    }
+    const filePath = input?.tool_input?.file_path;
+    if (!filePath || !TEXT_EXT.has(path.extname(filePath)) || hookSkipped(path.resolve(filePath))) process.exit(0);
+    if (hookDedup(input?.session_id ?? '', [path.resolve(filePath)])) process.exit(0);
+    const rc = findRc(path.dirname(filePath));
+    if (rc?.ignore) {
+      const rel = path.relative(rc._dir, filePath);
+      if (rc.ignore.some((pat) => rel.startsWith(pat) || rel.includes(`/${pat}`))) process.exit(0);
+    }
+    const rules = applyRcRuleConfig([...getRules({ preset: rc?.preset ?? 'paper' }), ...loadCustomRules(rc, { warn: () => {} })], rc);
+    const text = fs.readFileSync(filePath, 'utf8');
+    const violations = onlyChanged(path.resolve(filePath), checkText(text, filePath, rules)).filter((v) => v.severity !== 'info'); // errorとwarnは修正必須、infoは止めない
+    if (violations.length === 0) process.exit(0);
+    const lines = violations
+      .slice(0, 15)
+      .map((v) => `- ${path.basename(filePath)}:${v.line} [${v.ruleId}] 「${v.matched.replace(/\n/g, '\\n')}」 → ${v.ask}`);
+    console.error(
+      `dead-cliche: クリシェを検出しました (${violations.length} 件)。意味を保ったまま書き直してください。\n` +
+        lines.join('\n')
+    );
+    process.exit(2);
+  } catch {
+    process.exit(0);
+  }
+}
+
+// 決定論的修正。既定はdry-runで、--writeを付けたときだけ書き込む。
+function cmdFix(args) {
+  const files = args._;
+  if (files.length === 0) {
+    console.error('使い方: dead-cliche fix <files...> [--preset name] [--write]');
+    process.exit(2);
+  }
+  let totalEdits = 0;
+  for (const f of files) {
+    const rc = findRc(path.dirname(path.resolve(f)));
+    const preset = args.flags.preset ?? rc?.preset ?? 'paper';
+    const rules = applyRcRuleConfig([...getRules({ preset, rulesDir: args.flags['rules-dir'] }), ...loadCustomRules(rc)], rc);
+    const text = fs.readFileSync(f, 'utf8');
+    const masked = MD_EXT.has(path.extname(f)) ? maskMarkdownCode(text) : text;
+    const { text: fixed, applied } = applyFixes(text, rules, { maskedText: masked });
+    totalEdits += applied.length;
+    for (const e of applied) {
+      console.log(`${f}: ${e.ruleId} 「${e.before}」→「${e.after}」`);
+    }
+    if (args.flags.write && applied.length > 0) fs.writeFileSync(f, fixed);
+  }
+  if (totalEdits === 0) {
+    console.log('決定論的に修正できる検出はありません (fixを持たないルールは書き直しが必要です)');
+  } else {
+    console.log(`\n${totalEdits} 件${args.flags.write ? 'を書き込みました' : ' (dry-run。書き込むには --write)'}`);
+  }
+}
+
+// ローカル編集フォーム。カスタム辞書 (プロジェクト辞書) だけを書き換える。
+// 保存先は --file、無ければ .deadclicherc.json の customRules の1つ目、
+// それも無ければ .deadcliche/custom-rules.yml (rcに追記する案内を出す)。
+async function cmdUi(args) {
+  const { createUiServer } = await import('./ui.mjs');
+  const rc = findRc(process.cwd());
+  const base = rc?._dir ?? process.cwd();
+  const fromRc = rc?.customRules?.[0];
+  const file = path.resolve(base, args.flags.file ?? fromRc ?? '.deadcliche/custom-rules.yml');
+  // 字句のパスだけ見ると、rules/ の中を指すシンボリックリンク経由で共有辞書を書き換えられる。
+  // 実体 (既存ファイルと親ディレクトリ) を解決してから判定する
+  const sharedRules = fs.realpathSync.native(path.join(PACKAGE_ROOT, 'rules'));
+  const resolved = [];
+  try {
+    resolved.push(fs.realpathSync.native(file));
+  } catch {
+    // まだ無いファイルは親ディレクトリで見る
+  }
+  try {
+    resolved.push(fs.realpathSync.native(path.dirname(file)));
+  } catch {}
+  if (resolved.some((p) => p === sharedRules || p.startsWith(sharedRules + path.sep))) {
+    console.error('共有辞書 (rules/) はこのフォームからは編集できません。PRで変更してください');
+    process.exit(2);
+  }
+  const port = Number(args.flags.port ?? 7777);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    console.error(`--port には1〜65535の整数を指定してください: ${args.flags.port}`);
+    process.exit(2);
+  }
+  const { server, token, listen } = createUiServer({ file, port });
+  // 使用中のポートで生のスタックトレースを出さない
+  server.on('error', (e) => {
+    if (e.code === 'EADDRINUSE') console.error(`ポート ${port} は使用中です。--port で別の番号を指定してください`);
+    else console.error(`起動できませんでした: ${e.message}`);
+    process.exit(2);
+  });
+  await listen(port);
+  console.log(`dead-cliche ui: http://127.0.0.1:${port}/?token=${token}`);
+  console.log(`保存先: ${path.relative(process.cwd(), file) || file}`);
+  if (!fromRc && !args.flags.file) {
+    console.log('この辞書を検査に効かせるには、.deadclicherc.json に次を足してください:');
+    console.log(`  "customRules": ["${path.relative(base, file)}"]`);
+  }
+  console.log('終了するには Ctrl+C');
+}
+
+const args = parseArgs(process.argv.slice(2));
+const cmd = args._.shift();
+if (cmd === 'version' || args.flags.version) {
+  const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  console.log(pkg.version);
+  process.exit(0);
+}
+switch (cmd) {
+  case 'check':
+    cmdCheck(args);
+    break;
+  case 'fix':
+    cmdFix(args);
+    break;
+  case 'list':
+    cmdList(args);
+    break;
+  case 'explain':
+    cmdExplain(args);
+    break;
+  case 'claude-hook':
+    cmdClaudeHook();
+    break;
+  case 'ui':
+    await cmdUi(args);
+    break;
+  default:
+    console.log('使い方: dead-cliche <check|fix|ui|list|explain|claude-hook> [options]');
+    console.log('  check [files...] [--preset name] [--format json] [--min-severity warn] [--fail-on info|warn|error]  (既定: warn以上でexit 1)');
+    console.log('  fix <files...> [--preset name] [--write]   決定論的修正 (既定はdry-run)');
+    console.log('  --strict は info も含めて exit 1 にする (--fail-on info と同義)');
+    console.log('  ui [--port 7777] [--file path]            プロジェクト辞書のローカル編集フォーム (127.0.0.1のみ)');
+  console.log('  list [--preset name] [--manual]');
+    console.log('  explain <rule-id>');
+    process.exit(cmd ? 2 : 0);
+}
