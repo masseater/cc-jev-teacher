@@ -3,7 +3,8 @@ import { defineHook, runHook } from "cc-hooks-ts";
 
 import { failedOf, hasApiKey } from "./hook.ts";
 
-const WRITES = /sed\s+-i|perl\s+-p?i|python3?\s|node\s+(-e|-)|>>?\s*[^\s&|]|\btee\b|\bmv\s|\bcp\s/;
+const WRITES =
+  /sed\s+-i|perl\s+-p?i|python3?\s|node\s+(-e|-)|>>?\s*(?!\/dev\/null)[^\s&|]|\btee\b|\bmv\s|\bcp\s/;
 
 const hook = defineHook({
   trigger: { PreToolUse: { Bash: true } },

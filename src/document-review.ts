@@ -1,11 +1,10 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { basename, dirname, join, relative } from "node:path";
 
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { type Checks, failedOf, hasApiKey } from "./hook.ts";
+import { type Checks, CONFIG_DIR, failedOf, hasApiKey, isScratch } from "./hook.ts";
 import { aiJapanese } from "./japanese.ts";
 import { repositoryOf } from "./repository.ts";
 
@@ -13,7 +12,6 @@ const PROSE_FILE = /\.(md|mdx|markdown|txt)$/i;
 const DOCS = new Set(["README.md", "AGENTS.md", "CLAUDE.md"]);
 const LIMIT = 12000;
 const SKILL_FILE = /(^|\/)skills\/([^/]+)\/SKILL\.md$/;
-const CONFIG_DIR = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude");
 
 // Skills of the repository, the user, and installed plugins.
 const skillsOf = (repositoryFiles: Array<string>) => {
@@ -112,7 +110,7 @@ const hook = defineHook({
   run: async (context) => {
     const { input } = context;
     const path = input.tool_input.file_path;
-    if (!PROSE_FILE.test(path) || !existsSync(path)) return context.success();
+    if (!PROSE_FILE.test(path) || !existsSync(path) || isScratch(path)) return context.success();
     const isSkill = basename(path) === "SKILL.md";
     const document = readFileSync(path, "utf8").slice(0, LIMIT);
     const repository = repositoryOf(path) ?? {

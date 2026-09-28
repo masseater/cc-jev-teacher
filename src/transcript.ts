@@ -1,25 +1,50 @@
 import { closeSync, fstatSync, openSync, readFileSync, readSync } from "node:fs";
 
 import type { Message } from "fast-jev-compaction";
+import * as v from "valibot";
 
-type Entry = {
-  type?: string;
-  isMeta?: boolean;
-  message?: { role?: string; content?: unknown };
-  attachment?: { type?: string; prompt?: unknown; humanTurn?: boolean };
-};
+// A field that is dropped when it has an unexpected type, so one odd entry does not fail the hook.
+const maybe = <T extends v.GenericSchema>(schema: T) => v.fallback(v.optional(schema), undefined);
 
-type ToolUse = {
-  type?: string;
-  name?: string;
-  input?: {
-    file_path?: string;
-    content?: string;
-    new_string?: string;
-    command?: string;
-    skill?: string;
-  };
-};
+const Entry = v.looseObject({
+  type: maybe(v.string()),
+  isMeta: maybe(v.boolean()),
+  message: maybe(v.looseObject({ role: maybe(v.string()), content: v.optional(v.unknown()) })),
+  attachment: v.optional(v.unknown()),
+});
+type Entry = v.InferOutput<typeof Entry>;
+
+const QueuedPrompt = v.object({
+  type: v.literal("queued_command"),
+  humanTurn: v.literal(true),
+  prompt: v.string(),
+});
+
+const Block = v.looseObject({
+  type: maybe(v.string()),
+  text: maybe(v.string()),
+  id: maybe(v.string()),
+  name: maybe(v.string()),
+  input: maybe(
+    v.looseObject({
+      file_path: maybe(v.string()),
+      content: maybe(v.string()),
+      new_string: maybe(v.string()),
+      command: maybe(v.string()),
+      skill: maybe(v.string()),
+    }),
+  ),
+  tool_use_id: maybe(v.string()),
+  content: v.optional(v.unknown()),
+  is_error: maybe(v.boolean()),
+});
+const Blocks = v.fallback(v.array(v.fallback(Block, {})), []);
+
+// Message content is either plain text or a list of blocks.
+const blocksOf = (content: unknown) =>
+  v.parse(Blocks, typeof content === "string" ? [{ type: "text", text: content }] : content);
+
+const entryOf = (line: string) => v.parse(Entry, JSON.parse(line));
 
 const SEARCH_TOOLS = /exa|websearch|webfetch|web_search|web_fetch|firecrawl|context7|jev_navigate/i;
 const SEARCH_SKILLS = /dont-it-yourself|find-skills|firecrawl|deep-research/;
@@ -27,17 +52,10 @@ const SEARCH_COMMANDS =
   /\b(gh (api|search|repo view)|skills (find|add)|npm (view|search|info)|vp (info|view)|pnpm (view|info)|curl\s[^|]*https?:\/\/|jg )/;
 
 const textOf = (content: unknown) =>
-  typeof content === "string"
-    ? content
-    : Array.isArray(content)
-      ? content
-          .filter(
-            (part): part is { type: "text"; text: string } =>
-              typeof part === "object" && part !== null && part.type === "text",
-          )
-          .map((part) => part.text)
-          .join("\n")
-      : "";
+  blocksOf(content)
+    .filter((block) => block.type === "text")
+    .map((block) => block.text ?? "")
+    .join("\n");
 
 const promptOf = (entry: Entry) => {
   if (entry.type !== "user" || entry.isMeta || entry.message?.role !== "user") return null;
@@ -74,7 +92,7 @@ export const entriesOf = (transcriptPath: string) => {
         .reverse();
       for (const line of lines) {
         if (!line) continue;
-        const entry = JSON.parse(line) as Entry;
+        const entry = entryOf(line);
         entries.push(entry);
         if (promptOf(entry) !== null) return entries.reverse();
       }
@@ -90,26 +108,19 @@ export const instructionOf = (entries: Array<Entry>) =>
     .reduce<Array<string>>((turn, entry) => {
       const text = promptOf(entry);
       if (text) return [text];
-      const queued = entry.attachment;
-      return entry.type === "attachment" &&
-        queued?.type === "queued_command" &&
-        queued.humanTurn &&
-        typeof queued.prompt === "string"
-        ? [...turn, queued.prompt.trim()]
+      return entry.type === "attachment" && v.is(QueuedPrompt, entry.attachment)
+        ? [...turn, entry.attachment.prompt.trim()]
         : turn;
     }, [])
     .join("\n\n");
 
 export const toolUsesOf = (entries: Array<Entry>) =>
   entries
-    .flatMap((entry) =>
-      entry.type === "assistant" && Array.isArray(entry.message?.content)
-        ? (entry.message.content as Array<ToolUse>)
-        : [],
-    )
+    .filter((entry) => entry.type === "assistant")
+    .flatMap((entry) => blocksOf(entry.message?.content))
     .filter((part) => part.type === "tool_use");
 
-export const searchedOf = (toolUses: Array<ToolUse>) =>
+export const searchedOf = (toolUses: ReturnType<typeof toolUsesOf>) =>
   toolUses.some(
     (part) =>
       SEARCH_TOOLS.test(part.name ?? "") ||
@@ -117,30 +128,12 @@ export const searchedOf = (toolUses: Array<ToolUse>) =>
       (part.name === "Bash" && SEARCH_COMMANDS.test(part.input?.command ?? "")),
   );
 
-type Block = {
-  type?: string;
-  text?: string;
-  id?: string;
-  name?: string;
-  input?: Record<string, unknown>;
-  tool_use_id?: string;
-  content?: unknown;
-  is_error?: boolean;
-};
-
-const blocksOf = (content: unknown): Array<Block> =>
-  typeof content === "string"
-    ? [{ type: "text", text: content }]
-    : Array.isArray(content)
-      ? content
-      : [];
-
 // Every message of the session, in the shape fast-jev-compaction takes.
 export const messagesOf = (transcriptPath: string): Array<Message> =>
   readFileSync(transcriptPath, "utf8")
     .split("\n")
     .filter(Boolean)
-    .map((line) => JSON.parse(line) as Entry)
+    .map(entryOf)
     .filter((entry) => (entry.type === "user" && !entry.isMeta) || entry.type === "assistant")
     .map((entry) => {
       const blocks = blocksOf(entry.message?.content);

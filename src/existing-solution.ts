@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { failedOf, hasApiKey, SCRATCH } from "./hook.ts";
+import { failedOf, hasApiKey, isScratch } from "./hook.ts";
 import { entriesOf, instructionOf, searchedOf, toolUsesOf } from "./transcript.ts";
 
 const hook = defineHook({
@@ -11,7 +11,7 @@ const hook = defineHook({
   shouldRun: hasApiKey,
   run: async (context) => {
     const path = context.input.tool_input.file_path;
-    if (existsSync(path) || SCRATCH.test(path)) return context.success();
+    if (existsSync(path) || isScratch(path)) return context.success();
     const entries = entriesOf(context.input.transcript_path);
     if (searchedOf(toolUsesOf(entries))) return context.success();
     const failed = await failedOf(

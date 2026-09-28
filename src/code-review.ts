@@ -4,7 +4,7 @@ import { dirname, join, relative } from "node:path";
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { failedOf, hasApiKey } from "./hook.ts";
+import { failedOf, hasApiKey, isScratch } from "./hook.ts";
 import { repositoryOf } from "./repository.ts";
 
 const CODE_FILE = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs|py|go|rs|rb|java|kt|swift|cs|php|scala)$/;
@@ -20,7 +20,8 @@ const hook = defineHook({
     const { input } = context;
     const path = input.tool_input.file_path;
     const repository = repositoryOf(path);
-    if (!CODE_FILE.test(path) || !existsSync(path) || !repository) return context.success();
+    if (!CODE_FILE.test(path) || !existsSync(path) || isScratch(path) || !repository)
+      return context.success();
     const file = relative(repository.root, path);
     const read = (pattern: RegExp, limit: number) =>
       repository.files
@@ -50,6 +51,13 @@ const hook = defineHook({
           ),
           reason:
             "業務の概念を、コードが何をするかで名付けています。業務の話とコードを突き合わせられるよう、その概念が業務で何と呼ばれるかで名付けてください。",
+        },
+        complexValidation: {
+          question: noul(
+            "Does `written` check the shape or values of data (input, JSON, config, API responses, tool input) with complex hand-written conditions, such as chains of typeof / instanceof / in checks, several && or || clauses over fields, or nested null and range checks, where a validation library schema would express the same rules simply? A single simple check does not count.",
+          ),
+          reason:
+            "複雑な条件式でデータを検証しています。何を受け付けるかが一目で分かるよう、バリデーションライブラリを使って簡潔に検証してください。",
         },
       },
     );

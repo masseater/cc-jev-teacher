@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { clientOf, hasApiKey, SCRATCH, THRESHOLD } from "./hook.ts";
+import { clientOf, hasApiKey, isScratch, THRESHOLD } from "./hook.ts";
 import { entriesOf, instructionOf } from "./transcript.ts";
 
 const CONFIG =
@@ -21,7 +21,7 @@ const hook = defineHook({
   run: async (context) => {
     const { input } = context;
     const path = input.tool_input.file_path;
-    if (SCRATCH.test(path)) return context.success();
+    if (isScratch(path)) return context.success();
     let before: string;
     let after: string;
     if (input.tool_name === "Write") {

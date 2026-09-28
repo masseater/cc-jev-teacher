@@ -48,7 +48,7 @@
           },
           {
             "type": "command",
-            "command": "bun \"${CLAUDE_PLUGIN_ROOT}/src/naming-review.ts\"",
+            "command": "bun \"${CLAUDE_PLUGIN_ROOT}/src/code-review.ts\"",
             "timeout": 60
           }
         ]

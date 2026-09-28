@@ -4,7 +4,7 @@ import { join, relative } from "node:path";
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { failedOf, hasApiKey } from "./hook.ts";
+import { failedOf, hasApiKey, isScratch } from "./hook.ts";
 import { repositoryOf } from "./repository.ts";
 
 const SCRIPT_FILE =
@@ -17,7 +17,8 @@ const hook = defineHook({
   run: async (context) => {
     const path = context.input.tool_input.file_path;
     const repository = repositoryOf(path);
-    if (!SCRIPT_FILE.test(path) || !existsSync(path) || !repository) return context.success();
+    if (!SCRIPT_FILE.test(path) || !existsSync(path) || isScratch(path) || !repository)
+      return context.success();
     const failed = await failedOf(
       {
         files: repository.files
