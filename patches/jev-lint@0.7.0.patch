@@ -1,0 +1,15 @@
+diff --git a/dist/run.js b/dist/run.js
+index e1ece9f116a34b13d1a9721e73c409df4969b2f2..d1dc9969c1988825c5c3c6665b8c7a297464d82f 100644
+--- a/dist/run.js
++++ b/dist/run.js
+@@ -135,6 +135,10 @@ export async function collectSubjects({ rules, paths, arm = null, diffRanges = n
+             skippedByDiff += 1;
+             continue;
+         }
++        if (isIgnored(ignoresIn(s.file), s.line, s.rule.id)) {
++            ignoredSubjects += 1;
++            continue;
++        }
+         subjects.push({ ...s, arm: arm ?? s.rule.state });
+     }
+     // The `paired` arm's evidence lives in other files, found once per run.

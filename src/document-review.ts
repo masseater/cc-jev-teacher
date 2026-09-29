@@ -60,7 +60,7 @@ const proseChecks: Checks = {
 const skillChecks: Checks = {
   frontmatter: {
     question: noul(
-      "Does the skill in `document` lack a YAML frontmatter block at the very top (between --- lines) that has both a non-empty `name` and a non-empty `description` saying when to use the skill?",
+      "Does the skill in `document` lack a YAML frontmatter block at the very top (between --- lines) that has both a non-empty `name` and a non-empty `description` saying when to use the skill? Judge the whole file in `document`; `written` is only the part just changed, not the top of the file.",
     ),
     reason:
       "スキルがいつ使われるかを判断できるよう、frontmatter に名前と使う場面を書いてください。",

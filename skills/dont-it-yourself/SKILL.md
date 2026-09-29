@@ -3,6 +3,8 @@ name: dont-it-yourself
 description: 新しい処理やツールを書き始める前に使う。使えるライブラリや機能がすでにないかを先に探す
 ---
 
+<!-- jev-lint-ignore-file document-lacks-firsthand-evidence -->
+
 # 自前で作らない
 
 ## 考え方

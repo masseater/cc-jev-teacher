@@ -27,5 +27,8 @@
       "version": "1.4.2",
       "onFail": "download"
     }
+  },
+  "patchedDependencies": {
+    "jev-lint@0.7.0": "patches/jev-lint@0.7.0.patch"
   }
 }

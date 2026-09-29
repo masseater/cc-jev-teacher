@@ -18,6 +18,9 @@ const questions = {
   unmeasured: noul(
     "Does the report claim a cause, frequency, rate, latency, cost, size, or impact from guessing, using hedges such as probably, likely, seems, should, or maybe, or vague amounts such as many, often, fast, slow, or rarely, instead of the concrete number that was measured and where it came from (a log query, command output, or file)? Saying that something could not be measured, with the reason, does not count.",
   ),
+  lumped: noul(
+    'Does the response refer to several things the user has to decide or act on only as a group or a count (for example "five rules" or "three open questions") without naming each one and what it is?',
+  ),
   isReport: noul(
     "Is the report a report on carrying out work the instruction asked for, rather than an answer or explanation to a question the user asked?",
   ),
@@ -68,6 +71,10 @@ const checks: Record<string, { reason: string; failed?: (hit: Hit) => boolean }>
   leftovers: {
     reason:
       "完了報告に、検証や後片付け（テストデータ・テストユーザー・キーや一時トークン・一時ファイル）の残りや、それをやるかの確認が含まれています。確認を取らずに最後までやってから報告し直してください。",
+  },
+  lumped: {
+    reason:
+      "ユーザーに判断や対応を仰ぐものを、件数やひとまとめの呼び方で書いています。ユーザーが一つずつ判断できるよう、何があるのかを個別に挙げて書き直してください。",
   },
   partial: {
     reason:

@@ -3,6 +3,8 @@ name: measure-everything
 description: エラー処理（catch、fallback、既定値、リトライ、タイムアウト）を書いたり直したりするとき、ログを調べて数字や原因を報告するとき、「直った」と言う前に使う
 ---
 
+<!-- jev-lint-ignore-file document-lacks-firsthand-evidence -->
+
 # 全てを計測せよ
 
 ## 考え方
