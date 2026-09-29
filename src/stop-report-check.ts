@@ -13,7 +13,10 @@ const questions = {
     "Does the report state that test data, test accounts, keys, tokens or temporary files created during this work still remain, or ask the user whether to verify or clean up? Merely describing such things as a topic or feature does not count.",
   ),
   verbose: noul(
-    "Is the report verbose: does it contain more than a brief statement of what happened to each instructed item, such as how the work was done, investigation steps, test results, or background explanation? The concrete numbers and their source that back a claim about a cause, frequency, latency, cost, or impact do not count. A short statement of where and how the result was verified (the environment and what was operated or checked) does not count.",
+    "Is the report verbose: does it contain more than a brief statement of what happened to each instructed item, such as how the work was done, investigation steps, test results, or background explanation? The concrete numbers and their source that back a claim about a cause, frequency, latency, cost, or impact do not count. A short statement of where and how the result was verified (the environment and what was operated or checked) does not count. Plans, policies, or options that the report lays out for the user to decide on do not count.",
+  ),
+  planInChat: noul(
+    "Does the report spell out plans, policies, or options in detail in the conversation itself for the user to review and decide on, instead of only naming the decisions the user has to make?",
   ),
   unmeasured: noul(
     "Does the report claim a cause, frequency, rate, latency, cost, size, or impact from guessing, using hedges such as probably, likely, seems, should, or maybe, or vague amounts such as many, often, fast, slow, or rarely, instead of the concrete number that was measured and where it came from (a log query, command output, or file)? Saying that something could not be measured, with the reason, does not count.",
@@ -75,6 +78,11 @@ const checks: Record<string, { reason: string; failed?: (hit: Hit) => boolean }>
   lumped: {
     reason:
       "ユーザーに判断や対応を仰ぐものを、件数やひとまとめの呼び方で書いています。ユーザーが一つずつ判断できるよう、何があるのかを個別に挙げて書き直してください。",
+  },
+  planInChat: {
+    reason:
+      "ユーザーに計画や方針を求める必要が本当にある場合は、会話の中ではなくファイルに書き出して、ユーザーが視覚的に確認できる状態にしてください。会話には、決めてほしいことを一つずつ短く挙げるだけにしてください。",
+    failed: (hit) => hit("planInChat") && hit("isReport"),
   },
   partial: {
     reason:
