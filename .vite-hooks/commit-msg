@@ -1,3 +1,0 @@
-script=.vite-hooks/_/mergify-hooks/commit-msg.sh
-[ -f "$script" ] || exit 0
-sh "$script" "$@"
