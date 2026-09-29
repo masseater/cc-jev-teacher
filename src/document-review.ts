@@ -1,10 +1,10 @@
 import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
 
-import { noul } from "@typesafe-ai/sdk";
+import { type JsonValue, noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { type Checks, failedOf, hasApiKey } from "./jev-checks.ts";
+import { type Checks, hasApiKey, noulsOf, yesKeysOf } from "./jev-checks.ts";
 import { CONFIG_DIR, isScratch } from "./scratch-path.ts";
 import { aiJapanese } from "./japanese.ts";
 import { repositoryOf } from "./repository.ts";
@@ -29,7 +29,7 @@ const proseChecks: Checks = {
   aiJapanese,
   missingPath: {
     question: noul(
-      "Does `document` mention something that looks like a file or directory path in this repository (relative to the repository root or to the document) that is not in `repository_files`? `repository_files` lists only the files whose path shares a segment with the document, so a path whose file is absent from it does not exist. URLs, package names, commands, absolute or home-directory paths, obvious placeholders in examples, and paths the document explicitly says belong to another named repository do not count.",
+      "Does `document` mention something that looks like a file or directory path in this repository (relative to the repository root or to the document) that is not in `repository_files`? `repository_files` lists every existing file and directory (ending in /) whose path or file name appears in the document, relative to the repository root, followed in parentheses by the path relative to the document when the document writes it that way; a path that matches none of them does not exist. URLs, package names, commands, absolute or home-directory paths, obvious placeholders in examples, and paths the document explicitly says belong to another named repository do not count.",
     ),
     reason:
       "ファイルパスのように書かれているのに、そのファイルがリポジトリにありません。正しいパスに直すか、別のリポジトリのものならどのリポジトリかを書いてください。",
@@ -64,6 +64,7 @@ const skillChecks: Checks = {
     ),
     reason:
       "スキルがいつ使われるかを判断できるよう、frontmatter に名前と使う場面を書いてください。",
+    wholeFile: true,
   },
   reasons: {
     question: noul(
@@ -105,6 +106,80 @@ const docChecks: Checks = {
   },
 };
 
+// Existing files and directories whose path, relative to the root or to the document, or whose file name appears in the document.
+const mentionedOf = (
+  repository: { root: string; files: Array<string> },
+  path: string,
+  document: string,
+) => {
+  const directories = repository.files.flatMap((file) =>
+    file
+      .split("/")
+      .slice(0, -1)
+      .map((_, index, segments) => `${segments.slice(0, index + 1).join("/")}/`),
+  );
+  return [...new Set([...repository.files, ...directories])].flatMap((entry) => {
+    const bare = entry.replace(/\/$/, "");
+    const fromDocument = relative(dirname(path), join(repository.root, bare));
+    if (fromDocument !== bare && document.includes(fromDocument))
+      return [`${entry} (${fromDocument}${entry.endsWith("/") ? "/" : ""} from the document)`];
+    return document.includes(bare) || (!entry.endsWith("/") && document.includes(basename(entry)))
+      ? [entry]
+      : [];
+  });
+};
+
+const MARGIN = 0.1;
+const MAX_LINES = 5;
+
+// Asks Jev, line by line, which lines make each failed check fail, and keeps the lines nearly as likely as the likeliest.
+const linesOf = async (
+  state: { document: string } & Record<string, JsonValue>,
+  checks: Checks,
+  failed: Array<string>,
+) => {
+  const lines = state.document
+    .split("\n")
+    .map((text, index) => ({ number: index + 1, text }))
+    .filter(({ text }) => text.trim() !== "");
+  const questions = Object.fromEntries(
+    failed
+      .filter((key) => !checks[key]?.wholeFile)
+      .flatMap((key) =>
+        lines.map(({ number, text }) => [
+          `${key}:${number}`,
+          noul({
+            question: checks[key]?.question.instructions ?? null,
+            line: number,
+            text,
+            ask: "Is this line of `document` one of the lines that make the answer to `question` yes?",
+          }),
+        ]),
+      ),
+  );
+  if (Object.keys(questions).length === 0) return new Map<string, Array<string>>();
+  const answers = await noulsOf(state, questions);
+  return new Map(
+    failed.map((key) => {
+      const ofKey = answers.filter((answer) => answer.key.startsWith(`${key}:`));
+      const top = Math.max(...ofKey.map(({ noul }) => noul));
+      return [
+        key,
+        ofKey
+          .filter(({ noul }) => noul >= top - MARGIN)
+          .sort((a, b) => b.noul - a.noul)
+          .slice(0, MAX_LINES)
+          .map(({ key: at }) => Number(at.split(":")[1]))
+          .sort((a, b) => a - b)
+          .map((number) => {
+            const text = lines.find((line) => line.number === number)?.text.trim() ?? "";
+            return `L${number}: ${text.slice(0, 80)}`;
+          }),
+      ];
+    }),
+  );
+};
+
 const hook = defineHook({
   trigger: { PostToolUse: { Write: true, Edit: true } },
   shouldRun: hasApiKey,
@@ -118,35 +193,38 @@ const hook = defineHook({
       root: dirname(path),
       files: isSkill ? readdirSync(dirname(path), { recursive: true, encoding: "utf8" }) : [],
     };
-    const failed = await failedOf(
-      {
-        file: relative(repository.root, path),
-        document,
-        repository_files: repository.files
-          .filter((file) => file.split("/").some((segment) => document.includes(segment)))
-          .join("\n")
-          .slice(0, LIMIT),
-        available_skills: skillsOf(repository.files),
-        other_documents: repository.files
-          .map((file) => join(repository.root, file))
-          .filter(
-            (file) =>
-              PROSE_FILE.test(file) &&
-              existsSync(file) &&
-              realpathSync(file) !== realpathSync(path),
-          )
-          .map((file) => `# ${relative(repository.root, file)}\n${readFileSync(file, "utf8")}`)
-          .join("\n\n")
-          .slice(0, LIMIT),
-      },
-      {
-        ...proseChecks,
-        ...(isSkill ? skillChecks : {}),
-        ...(DOCS.has(basename(path)) ? docChecks : {}),
-      },
+    const state = {
+      file: relative(repository.root, path),
+      document,
+      repository_files: mentionedOf(repository, path, document).join("\n").slice(0, LIMIT),
+      available_skills: skillsOf(repository.files),
+      other_documents: repository.files
+        .map((file) => join(repository.root, file))
+        .filter(
+          (file) =>
+            PROSE_FILE.test(file) && existsSync(file) && realpathSync(file) !== realpathSync(path),
+        )
+        .map((file) => `# ${relative(repository.root, file)}\n${readFileSync(file, "utf8")}`)
+        .join("\n\n")
+        .slice(0, LIMIT),
+    };
+    const checks: Checks = {
+      ...proseChecks,
+      ...(isSkill ? skillChecks : {}),
+      ...(DOCS.has(basename(path)) ? docChecks : {}),
+    };
+    const failed = await yesKeysOf(
+      state,
+      Object.fromEntries(Object.entries(checks).map(([key, check]) => [key, check.question])),
     );
     if (failed.length === 0) return context.success();
-    return context.blockingError(`${path} を直してください。\n${failed.join("\n")}`);
+    const lines = await linesOf(state, checks, failed);
+    const items = failed.map((key) =>
+      [`- ${checks[key]?.reason}`, ...(lines.get(key) ?? []).map((line) => `  - ${line}`)].join(
+        "\n",
+      ),
+    );
+    return context.blockingError(`${path} を直してください。\n${items.join("\n")}`);
   },
 });
 
