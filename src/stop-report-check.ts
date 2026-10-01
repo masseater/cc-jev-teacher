@@ -1,7 +1,7 @@
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { clientOf, hasApiKey, THRESHOLD } from "./jev-checks.ts";
+import { hasApiKey, systemOne, THRESHOLD } from "./jev-checks.ts";
 import { aiJapanese } from "./japanese.ts";
 import { entriesOf, instructionOf, stopFeedbackOf, toolCallsOf, toolUsesOf } from "./transcript.ts";
 
@@ -13,10 +13,10 @@ const questions = {
     "Does the report state that test data, test accounts, keys, tokens or temporary files created during this work still remain, or ask the user whether to verify or clean up? Merely describing such things as a topic or feature does not count.",
   ),
   verbose: noul(
-    "Is the report verbose: does it contain more than a brief statement of what happened to each instructed item, such as how the work was done, investigation steps, test results, or background explanation? The concrete numbers and their source that back a claim about a cause, frequency, latency, cost, or impact do not count. A short statement of where and how the result was verified (the environment and what was operated or checked) does not count. Plans, policies, or options that the report lays out for the user to decide on do not count.",
+    "The report is verbose: besides a brief statement of what happened to each instructed item, it also tells how the work was done, the investigation steps, test results, or background explanation. The concrete numbers and their source that back a claim about a cause, frequency, latency, cost, or impact do not count. A short statement of where and how the result was verified (the environment and what was operated or checked) does not count. Plans, policies, or options that the report lays out for the user to decide on do not count.",
   ),
   planInChat: noul(
-    "Does the report spell out plans, policies, or options in detail in the conversation itself for the user to review and decide on, instead of only naming the decisions the user has to make?",
+    "The report spells out plans, policies, or options in detail in the conversation itself for the user to review and decide on, instead of only naming the decisions the user has to make.",
   ),
   unmeasured: noul(
     "Does the report claim a cause, frequency, rate, latency, cost, size, or impact from guessing, using hedges such as probably, likely, seems, should, or maybe, or vague amounts such as many, often, fast, slow, or rarely, instead of the concrete number that was measured and where it came from (a log query, command output, or file)? Saying that something could not be measured, with the reason, does not count.",
@@ -31,13 +31,13 @@ const questions = {
     "Does the report admit that a problem it fixed also remains elsewhere, outside the part the assistant changed?",
   ),
   noPrevention: noul(
-    "Does the report say it fixed a bug, mistake, or problem without also putting in place a measure that stops the same kind of problem from happening again (such as a lint rule, a type, a hook, a shared function, or a rule in AGENTS.md or a skill)?",
+    "The report says the assistant fixed a bug, mistake, or problem, but it does not also put in place a measure that stops the same kind of problem from happening again (such as a lint rule, a type, a hook, a shared function, or a rule in AGENTS.md or a skill).",
   ),
   symptomOnly: noul(
     "Does the report say it fixed a problem only by working around or hiding the symptom (for example retries, catching and ignoring errors, special cases, hiding the output, or manual data fixes) instead of removing the underlying cause?",
   ),
   memoryDurable: noul(
-    "Did the assistant save to its own memory (see `tool_calls` and the report) something meant to apply from now on, such as a rule, decision, policy, convention, or how-to, instead of only temporary context for the work in progress?",
+    "The assistant saved to its own memory (a memory file or memory tool, see `tool_calls` and the report) something meant to apply from now on, such as a rule, decision, policy, convention, or how-to, instead of only temporary context for the work in progress. Writing to repository files such as AGENTS.md, CLAUDE.md, or a skill is not saving to memory.",
   ),
   askPermission: noul(
     "Is the assistant waiting for the user's permission to do something it could do by itself, such as installing, deploying, deleting, or running commands? Questions about billing, personal information, or product choices do not count.",
@@ -141,7 +141,7 @@ const hook = defineHook({
     const report = input.last_assistant_message?.trim();
     if (!report) return context.success();
     const entries = entriesOf(input.transcript_path);
-    const { answers } = await clientOf().systemOne({
+    const { answers } = await systemOne({
       state: {
         instruction: instructionOf(entries),
         report,

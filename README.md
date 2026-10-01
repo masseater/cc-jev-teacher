@@ -19,6 +19,12 @@ claude plugin marketplace add masseater/cc-jev-teacher
 claude plugin install cc-jev-teacher@cc-jev-teacher --config typesafe_api_key=YOUR_TYPESAFE_API_KEY
 ```
 
+Or, with an [OpenRouter](https://openrouter.ai) key, which uses the free [Respan Span-01 Lite](https://openrouter.ai/respan/span-01-lite) model by default:
+
+```sh
+claude plugin install cc-jev-teacher@cc-jev-teacher --config openrouter_api_key=YOUR_OPENROUTER_API_KEY
+```
+
 Start a new Claude Code session. That's it.
 
 From inside Claude Code, `/plugin marketplace add masseater/cc-jev-teacher` followed by `/plugin` works too; Claude Code prompts for the key.
@@ -44,14 +50,14 @@ Stop hook feedback:
 
 ## What It Does
 
-The hooks check Claude's tool calls, the documents it writes, and its reports, and block with feedback when one falls short, such as editing a file with `sed -i` or naming a domain concept `BookingDataProcessor`. Naming is judged against the project's glossary (`CONTEXT.md` and similar) when there is one. TypeSafe Jev makes every judgment; the questions live under `src/`, and the feedback points Claude to the skills under `skills/`.
+The hooks check Claude's tool calls, the documents it writes, and its reports, and block with feedback when one falls short, such as editing a file with `sed -i` or naming a domain concept `BookingDataProcessor`. Naming is judged against the project's glossary (`CONTEXT.md` and similar) when there is one. A decision model (TypeSafe Jev, or a model on OpenRouter) makes every judgment; the questions live under `src/`, and the feedback points Claude to the skills under `skills/`.
 
 The `dead-cliche-writing` skill comes from [BoxPistols/ux-writing-dead-cliche](https://github.com/BoxPistols/ux-writing-dead-cliche) (MIT) and runs its checker from the npm package `textlint-rule-ux-writing-dead-cliche`.
 
 ## Workflow
 
 1. **Filter** — the hook skips scratch paths and harmless commands locally.
-2. **Grade** — the hook sends the instruction, the tool call or report, and a few yes/no questions to TypeSafe Jev in one request.
+2. **Grade** — the hook sends the instruction, the tool call or report, and a few yes/no questions to the decision model in one request.
 3. **Block or pass** — a failing grade exits with code 2 and the reason goes back to Claude; anything else, including API errors, lets Claude continue.
 
 ## Compatibility
@@ -62,11 +68,15 @@ The `dead-cliche-writing` skill comes from [BoxPistols/ux-writing-dead-cliche](h
 
 ## Configuration
 
-| Option             | Required | Description                                                                                                                                                                |
-| ------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `typesafe_api_key` | Yes      | Your TypeSafe API key. Stored in the OS credential store and passed to hooks as `CLAUDE_PLUGIN_OPTION_TYPESAFE_API_KEY`. `TYPESAFE_API_KEY` in the environment also works. |
+| Option               | Required            | Description                                                                                                                                                                            |
+| -------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `typesafe_api_key`   | One of the two keys | Your TypeSafe API key, passed to hooks as `CLAUDE_PLUGIN_OPTION_TYPESAFE_API_KEY`. `TYPESAFE_API_KEY` in the environment also works.                                                   |
+| `openrouter_api_key` | One of the two keys | Your OpenRouter API key, passed as `CLAUDE_PLUGIN_OPTION_OPENROUTER_API_KEY`. `OPENROUTER_API_KEY` in the environment also works. When set, it takes precedence over the TypeSafe key. |
+| `openrouter_model`   | No                  | The OpenRouter decision model. Defaults to `respan/span-01-lite`; `respan/span-01` and `typesafe/jev-1.13` also work. `OPENROUTER_MODEL` in the environment also works.                |
 
-Without a key every hook does nothing.
+Sensitive options are stored in the OS credential store. Without a key every hook does nothing.
+
+Through OpenRouter, requests are routed only to providers that do not collect user data (`provider.data_collection: "deny"`). Set `CC_JEV_TEACHER_ALLOW_TRAINING=1` to allow providers that may store and train on your prompts.
 
 The feedback messages are in Japanese and encode the author's working rules (for example, no `localhost` URLs because the author works over SSH). Fork the repository to change them.
 
