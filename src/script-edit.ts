@@ -13,7 +13,7 @@ const hook = defineHook({
       {
         script: {
           question: noul(
-            "When `command` runs, does it itself rewrite source code or document files on disk, which the assistant should edit directly instead? Judge by what actually happens when it runs: text handed to a program as input is data, not a file write. Commands that only read, run, test, check, or format, and commands that write only temporary, generated, or lock files, do not count.",
+            "The assistant uses a shell command to edit source code or documents: running `command` changes the text inside existing source or document files. Commands that only read, run, test, check, format, or commit, and commands that write only temporary, generated, or lock files, do not count. Text handed to a program as input (such as a commit message) is data, not a file write.",
           ),
           reason:
             "数ファイル程度の編集にスクリプトを使っています。変更が見えて確かめられるよう、ファイルを直接編集してください。",

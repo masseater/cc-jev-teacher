@@ -29,7 +29,7 @@ const proseChecks: Checks = {
   aiJapanese,
   missingPath: {
     question: noul(
-      "Does `document` mention something that looks like a file or directory path in this repository (relative to the repository root or to the document) that is not in `repository_files`? `repository_files` lists every existing file and directory (ending in /) whose path or file name appears in the document, relative to the repository root, followed in parentheses by the path relative to the document when the document writes it that way; a path that matches none of them does not exist. URLs, package names, commands, absolute or home-directory paths, obvious placeholders in examples, and paths the document explicitly says belong to another named repository do not count.",
+      "`document` mentions something that looks like a file or directory path in this repository (relative to the repository root or to the document) that is not in `repository_files`. `repository_files` lists every existing file and directory (ending in /) whose path or file name appears in the document, relative to the repository root, followed in parentheses by the path relative to the document when the document writes it that way; a path that matches none of them does not exist. URLs, package names, commands, absolute or home-directory paths, obvious placeholders in examples, and paths the document explicitly says belong to another named repository do not count.",
     ),
     reason:
       "ファイルパスのように書かれているのに、そのファイルがリポジトリにありません。正しいパスに直すか、別のリポジトリのものならどのリポジトリかを書いてください。",
