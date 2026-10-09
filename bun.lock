@@ -7,7 +7,7 @@
       "dependencies": {
         "@typesafe-ai/sdk": "0.6.0",
         "cc-hooks-ts": "2.1.281",
-        "textlint-rule-ux-writing-dead-cliche": "^0.17.0",
+        "textlint-rule-ux-writing-dead-cliche": "^0.18.0",
         "valibot": "1.5.0",
       },
       "devDependencies": {
@@ -555,7 +555,7 @@
 
     "std-env": ["std-env@4.2.0", "", {}, "sha512-oCUKSupKTHX53EyjDtuZQ64pjLJ6yYCtpmEw0goYxtjG9KpbRe8KAsl2tBUGU9DyMcJ0RwJ8GqJAFzMXcXW1Rw=="],
 
-    "textlint-rule-ux-writing-dead-cliche": ["textlint-rule-ux-writing-dead-cliche@0.17.0", "", { "dependencies": { "js-yaml": "^4.1.0" }, "bin": { "dead-cliche": "src/cli.mjs" } }, "sha512-xE0WFot0Hwv8NYa2vb+8/b+Khdj43MNhIwBapCWgQhRBGyfyQOrj4uABnvzNwwQZhsyu6JbKrAqf/E8zoEZQzg=="],
+    "textlint-rule-ux-writing-dead-cliche": ["textlint-rule-ux-writing-dead-cliche@0.18.0", "", { "dependencies": { "js-yaml": "^4.1.0" }, "bin": { "dead-cliche": "src/cli.mjs" } }, "sha512-IyKjM/44dToutUa0pY9pod1FtLhd+hxsHFD8UlATrYr7n5vkByyjKHABhpaMDWHNI0Sj77ar07ZtmkY1PxqmNQ=="],
 
     "tinybench": ["tinybench@6.1.4", "", {}, "sha512-9APumHG7r4yOk4X4WlkmE71aZcv1gvin1czO3OQ1U9iJcFA5Ja/ygyb0vPOVHTthFozUYs8CLoLUlM8grb2lTQ=="],
 
