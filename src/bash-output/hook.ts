@@ -1,6 +1,7 @@
 import type { On, PluginOptions, Register, SessionMessage } from "claude-code";
 
-import { DEFAULT_MODEL, buildJevRequest, estimateTokens, parseJevResponse } from "./jev.js";
+import { type JevBackend, moduleBackend, systemOneRequest } from "../backend.ts";
+import { estimateTokens, parseJevResponse } from "./jev.js";
 import {
   classifyOutput,
   exceedsOutputThreshold,
@@ -26,7 +27,6 @@ const DEFAULTS = {
   keepThreshold: 0.5,
   maxStateTokens: 25_000,
   minTokens: MIN_OUTPUT_TOKENS,
-  model: DEFAULT_MODEL,
 };
 
 export type HookFetchInit = {
@@ -44,8 +44,6 @@ export type HookFetchResponse = {
 export type HookFetch = (url: string, init?: HookFetchInit) => Promise<HookFetchResponse>;
 
 export type HookConfig = {
-  apiKey?: string;
-  baseUrl?: string;
   chunkChars?: number;
   diagnostics?: boolean;
   chunkLines: number;
@@ -55,17 +53,11 @@ export type HookConfig = {
   minTokens: number;
   persistedOutputs: boolean;
   persistedMaxChars: number;
-  model: string;
 };
 
 function optionNumber(options: PluginOptions, key: string, fallback: number): number {
   const value = options[key];
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-function optionString(options: PluginOptions, key: string): string | undefined {
-  const value = options[key];
-  return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
 export function resolveHookConfig(options: PluginOptions): HookConfig {
@@ -77,12 +69,7 @@ export function resolveHookConfig(options: PluginOptions): HookConfig {
     persistedOutputs:
       typeof options.persistedOutputs === "boolean" ? options.persistedOutputs : true,
     persistedMaxChars: optionNumber(options, "persistedMaxChars", DEFAULTS.persistedMaxChars),
-    model: optionString(options, "model") ?? DEFAULTS.model,
   };
-  const apiKey = optionString(options, "apiKey");
-  if (apiKey) config.apiKey = apiKey;
-  const baseUrl = optionString(options, "baseUrl");
-  if (baseUrl && /^https?:\/\//.test(baseUrl)) config.baseUrl = baseUrl;
   const chunkChars = optionNumber(options, "chunkChars", 0);
   if (chunkChars > 0) config.chunkChars = chunkChars;
   if (options.diagnostics === true) config.diagnostics = true;
@@ -95,19 +82,11 @@ export function resolveHookConfig(options: PluginOptions): HookConfig {
   return config;
 }
 
-export function jevAsker(
-  fetchFn: HookFetch,
-  apiKey: string,
-  model: string,
-  baseUrl?: string,
-): JevAsker {
+/** A `JevAsker` over the engine's `$.http.fetch`, sending to the plugin's backend. */
+export function jevAsker(fetchFn: HookFetch, backend: JevBackend): JevAsker {
   return {
     async ask(state, questions) {
-      const request = buildJevRequest(
-        baseUrl ? { apiKey, model, baseUrl } : { apiKey, model },
-        state,
-        questions,
-      );
+      const request = systemOneRequest(backend, state, questions);
       const response = await fetchFn(request.url, {
         method: request.method,
         headers: request.headers,
@@ -131,28 +110,20 @@ export function goalFromMessages(messages: readonly SessionMessage[]): string {
     .join("\n");
 }
 
-/** Key lookup order: plugin option, TYPESAFE_API_KEY, EVAL_TYPESAFE_API_KEY, settings env. */
-export async function getApiKey(
+async function backendOf(
   $: {
     env: { get: (name: string) => Promise<string | undefined> };
     settings: { read: () => Promise<Readonly<Record<string, unknown>>> };
   },
-  config: HookConfig,
-): Promise<string | undefined> {
-  if (config.apiKey) return config.apiKey;
-  const fromEnv = await $.env.get("TYPESAFE_API_KEY");
-  if (fromEnv) return fromEnv;
-  // `claude plugin eval` runs with a fresh HOME and a scrubbed environment, and
-  // passes through only EVAL_* variables, so this is the eval suite's key path.
-  const fromEvalEnv = await $.env.get("EVAL_TYPESAFE_API_KEY");
-  if (fromEvalEnv) return fromEvalEnv;
-  const settings = await $.settings.read();
-  const env = settings["env"];
-  if (env && typeof env === "object") {
-    const value = (env as Record<string, unknown>)["TYPESAFE_API_KEY"];
-    if (typeof value === "string" && value) return value;
-  }
-  return undefined;
+  options: PluginOptions,
+): Promise<JevBackend> {
+  const env = {
+    OPENROUTER_API_KEY: await $.env.get("OPENROUTER_API_KEY"),
+    TYPESAFE_API_KEY: await $.env.get("TYPESAFE_API_KEY"),
+    OPENROUTER_MODEL: await $.env.get("OPENROUTER_MODEL"),
+    CC_JEV_TEACHER_ALLOW_TRAINING: await $.env.get("CC_JEV_TEACHER_ALLOW_TRAINING"),
+  };
+  return moduleBackend(options, env, (await $.settings.read())["env"]);
 }
 
 export const register: Register = (on: On, options: PluginOptions) => {
@@ -195,17 +166,16 @@ export const register: Register = (on: On, options: PluginOptions) => {
       decision = "document";
       if (classifyOutput(event.command, output) === "document") return answer;
       const combined = persisted ? output : output + (record.stderr ? `\n${record.stderr}` : "");
+      decision = "secret";
+      if (looksSecret(event.command, combined)) return answer;
       stage = "credentials";
-      const apiKey = await getApiKey($, configured);
+      const backend = await backendOf($, options);
       decision = "missing_key";
-      if (!apiKey) return answer;
+      if (!backend.apiKey) return answer;
       stage = "history";
       const messages = await $.session.messages();
       const goal = goalFromMessages(messages);
-      const secret = looksSecret(event.command, combined);
-      const path = secret
-        ? undefined
-        : (persisted ?? `${ARCHIVE_DIR}/bash-${event.tool_use_id ?? Date.now()}.txt`);
+      const path = persisted ?? `${ARCHIVE_DIR}/bash-${event.tool_use_id ?? Date.now()}.txt`;
       const footer = recoveryFooter(path);
       const maxChars = persisted
         ? Math.min(
@@ -237,19 +207,14 @@ export const register: Register = (on: On, options: PluginOptions) => {
           output,
           fullOutputPath: path,
         },
-        jevAsker(
-          async (url, init) => {
-            stage = "archive";
-            if (path) await (archived ??= saveOutput());
-            stage = "scoring";
-            requests += 1;
-            const response = await $.http.fetch(url, init);
-            return { status: response.status, ok: response.ok, text: response.text };
-          },
-          apiKey,
-          configured.model,
-          configured.baseUrl,
-        ),
+        jevAsker(async (url, init) => {
+          stage = "archive";
+          if (path) await (archived ??= saveOutput());
+          stage = "scoring";
+          requests += 1;
+          const response = await $.http.fetch(url, init);
+          return { status: response.status, ok: response.ok, text: response.text };
+        }, backend),
         {
           minTokens: configured.minTokens,
           maxChars: Number.isFinite(maxChars) ? maxChars : 0,

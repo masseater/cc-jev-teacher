@@ -70,5 +70,6 @@
         ]
       }
     ]
-  }
+  },
+  "modules": ["./register.ts"]
 }
