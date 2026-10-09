@@ -73,27 +73,19 @@ type BackendEnv = {
   CC_JEV_TEACHER_ALLOW_TRAINING?: string | undefined;
 };
 
-// The backend of a hooks module: the plugin's options first, then the environment, then the `env` of settings.json.
+// The backend of a hooks module: the plugin's options first, then the environment, as for the command hooks.
 export const moduleBackend = (
   options: Readonly<Record<string, unknown>>,
   env: BackendEnv,
-  settingsEnv: unknown,
 ): JevBackend => {
   const option = (key: string) => {
     const value = options[key];
     return typeof value === "string" ? value : "";
   };
-  const read = (name: keyof BackendEnv) => {
-    const fromSettings =
-      settingsEnv && typeof settingsEnv === "object"
-        ? (settingsEnv as Record<string, unknown>)[name]
-        : undefined;
-    return env[name] || (typeof fromSettings === "string" ? fromSettings : "");
-  };
   return jevBackend({
-    openRouterKey: option("openrouter_api_key") || read("OPENROUTER_API_KEY"),
-    typeSafeKey: option("typesafe_api_key") || read("TYPESAFE_API_KEY"),
-    openRouterModel: option("openrouter_model") || read("OPENROUTER_MODEL"),
-    allowTraining: read("CC_JEV_TEACHER_ALLOW_TRAINING") === "1",
+    openRouterKey: option("openrouter_api_key") || env.OPENROUTER_API_KEY || "",
+    typeSafeKey: option("typesafe_api_key") || env.TYPESAFE_API_KEY || "",
+    openRouterModel: option("openrouter_model") || env.OPENROUTER_MODEL || "",
+    allowTraining: env.CC_JEV_TEACHER_ALLOW_TRAINING === "1",
   });
 };

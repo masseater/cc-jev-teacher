@@ -58,7 +58,7 @@ When Claude Code compacts the conversation, or after a turn that leaves context 
 
 When a Bash command prints more than about 10,000 tokens, the model scores the output in chunks against the recent instructions, and only the chunks that matter reach Claude, followed by the path of the full output saved under `.claude/fast-jev-output/`. Output that looks like it holds credentials is passed through untouched and never sent.
 
-Both run as Claude Code hooks modules, so they need `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` in the environment or in the `env` of `settings.json`. They read the same keys as the other hooks.
+Both run as Claude Code hooks modules, so they need `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` in the environment or in the `env` of `settings.json`. They read the same keys as the other hooks, from the plugin options or the environment.
 
 ## Credits
 

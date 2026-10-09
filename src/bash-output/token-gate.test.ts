@@ -71,7 +71,6 @@ describe("output token gate", () => {
         session: { messages },
         http: { fetch },
         env: { get: async () => undefined },
-        settings: { read: async () => ({}) },
         fs: { write },
       } as unknown as Parameters<BashHook>[0],
       { tool: "Bash", command: "build", tool_use_id: "gate" },

@@ -42,7 +42,6 @@ function harness(options: Partial<HookConfig> = {}) {
     session: { messages: readMessages },
     http: { fetch },
     env: { get: async () => undefined },
-    settings: { read: async () => ({}) },
     fs: { exists: async () => false, read, write },
     ui: { log: vi.fn(), toast: vi.fn() },
   };
