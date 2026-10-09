@@ -7,50 +7,36 @@ import {
   TypeSafeClient,
 } from "@typesafe-ai/sdk";
 
+import { jevBackend, stateFor } from "./backend.ts";
+
 export const THRESHOLD = 0.7;
 
 const option = (name: string) => process.env[`CLAUDE_PLUGIN_OPTION_${name}`] || "";
 
-const openRouterKey = option("OPENROUTER_API_KEY") || process.env.OPENROUTER_API_KEY || "";
-const typeSafeKey = option("TYPESAFE_API_KEY") || process.env[ENV.apiKey] || "";
-
-const openRouterModel =
-  option("OPENROUTER_MODEL") || process.env.OPENROUTER_MODEL || "respan/span-01-lite";
-
-// OpenRouter is used whenever its key is set; otherwise requests go to TypeSafe directly.
-const backend = openRouterKey
-  ? {
-      apiKey: openRouterKey,
-      baseURL: "https://openrouter.ai/api",
-      defaultModel: openRouterModel,
-      extra: {
-        provider: {
-          data_collection: process.env.CC_JEV_TEACHER_ALLOW_TRAINING === "1" ? "allow" : "deny",
-        },
-      },
-    }
-  : { apiKey: typeSafeKey, extra: {} };
-
-// Respan models take state as text, so each field becomes a Markdown section.
-const stateFor = (state: EntryType) =>
-  openRouterKey && openRouterModel.startsWith("respan/") && state && typeof state === "object"
-    ? Object.entries(state)
-        .map(
-          ([key, value]) =>
-            `## ${key}\n${typeof value === "string" ? value : JSON.stringify(value)}`,
-        )
-        .join("\n\n")
-    : state;
+const backend = jevBackend({
+  openRouterKey: option("OPENROUTER_API_KEY") || process.env.OPENROUTER_API_KEY || "",
+  typeSafeKey: option("TYPESAFE_API_KEY") || process.env[ENV.apiKey] || "",
+  openRouterModel: option("OPENROUTER_MODEL") || process.env.OPENROUTER_MODEL || "",
+  allowTraining: process.env.CC_JEV_TEACHER_ALLOW_TRAINING === "1",
+});
 
 export const hasApiKey = () => backend.apiKey !== "";
 
 // Sends one System One request to the configured backend.
 export const systemOne = <const Q extends Questions>(request: SystemOneRequest<Q>) => {
-  const { extra, ...config } = backend;
-  const body: SystemOneRequest<Q> = { ...extra, ...request, state: stateFor(request.state) };
-  return new TypeSafeClient({ ...config, timeout: 50000, retry: { maxRetries: 1 } }).systemOne(
-    body,
-  );
+  const { apiKey, baseURL, model, extra } = backend;
+  const body: SystemOneRequest<Q> = {
+    ...extra,
+    ...request,
+    state: stateFor(backend, request.state),
+  };
+  return new TypeSafeClient({
+    apiKey,
+    baseURL,
+    defaultModel: model,
+    timeout: 50000,
+    retry: { maxRetries: 1 },
+  }).systemOne(body);
 };
 
 export type Checks = Record<string, { question: NoulQuestion; reason: string; wholeFile?: true }>;

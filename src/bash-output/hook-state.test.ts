@@ -11,7 +11,7 @@ const bashResult = (answer: { result?: unknown }) =>
 
 function harness(options: Partial<HookConfig> = {}) {
   const on = vi.fn();
-  register(on, { apiKey: "mock-key", ...options });
+  register(on, { typesafe_api_key: "mock-key", ...options });
   expect(on).toHaveBeenCalledWith("tool.call", { tool: "Bash" }, expect.any(Function));
   const hook = on.mock.calls[0]![2] as BashHook;
   const messages: ConversationMessage[] = [
@@ -41,6 +41,8 @@ function harness(options: Partial<HookConfig> = {}) {
   const host = {
     session: { messages: readMessages },
     http: { fetch },
+    env: { get: async () => undefined },
+    settings: { read: async () => ({}) },
     fs: { exists: async () => false, read, write },
     ui: { log: vi.fn(), toast: vi.fn() },
   };
@@ -394,13 +396,12 @@ describe("Bash output archives", () => {
     expect(h.fetch).not.toHaveBeenCalled();
   });
 
-  it("does not archive credential-like output or advertise a saved file", async () => {
+  it("passes credential-like output through without sending or saving it", async () => {
     const h = harness();
     h.original.result.stdout += "\npassword=synthetic-test-value";
     const result = await h.run();
     expect(h.write).not.toHaveBeenCalled();
-    expect(h.fetch).toHaveBeenCalled();
-    expect(result.result).toMatchObject({ stdout: expect.stringContaining("not saved to disk") });
-    expect(result.result).not.toMatchObject({ stdout: expect.stringContaining("full output:") });
+    expect(h.fetch).not.toHaveBeenCalled();
+    expect(result).toBe(h.original);
   });
 });

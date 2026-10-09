@@ -52,6 +52,21 @@ Stop hook feedback:
 
 The hooks check Claude's tool calls, the documents it writes, and its reports, and block with feedback when one falls short, such as editing a file with `sed -i` or naming a domain concept `BookingDataProcessor`. Naming is judged against the project's glossary (`CONTEXT.md` and similar) when there is one. A decision model (TypeSafe Jev, or a model on OpenRouter) makes every judgment; the questions live under `src/`, and the feedback points Claude to the skills under `skills/`.
 
+Two more hooks keep Claude's context small, through the same decision model.
+
+When Claude Code compacts the conversation, or after a turn that leaves context use at 60% or more, the model scores each earlier tool call and its result for whether the task still needs them. Calls it no longer needs are dropped, and stale results are cut to a short head, so the conversation is kept as it was written instead of being replaced by a summary. If the request fails or saves less than a quarter, Claude Code's own summary runs instead.
+
+When a Bash command prints more than about 10,000 tokens, the model scores the output in chunks against the recent instructions, and only the chunks that matter reach Claude, followed by the path of the full output saved under `.claude/fast-jev-output/`. Output that looks like it holds credentials is passed through untouched and never sent.
+
+Both run as Claude Code hooks modules, so they need `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` in the environment or in the `env` of `settings.json`. They read the same keys as the other hooks.
+
+## Credits
+
+- Compaction (`src/compaction`) is [tamaratran/fast-jev-compaction](https://github.com/tamaratran/fast-jev-compaction) as of [`e3f262a`](https://github.com/tamaratran/fast-jev-compaction/tree/e3f262a7f4d42bd8dd32ced30d26176f7cb545b0), MIT. Its license is in [`src/compaction/LICENSE`](src/compaction/LICENSE).
+- Bash output trimming (`src/bash-output`) is [tamaratran/jev-pruner](https://github.com/tamaratran/jev-pruner) as of [`edbc602`](https://github.com/tamaratran/jev-pruner/tree/edbc60262a5edc07e18d646c1a3f8a9f0ae868c5), MIT. Its license is in [`src/bash-output/LICENSE`](src/bash-output/LICENSE).
+
+This plugin sends their requests through its own OpenRouter or TypeSafe backend, and the Bash output hook skips credential-like output instead of sending it unsaved.
+
 The `dead-cliche-writing` skill comes from [BoxPistols/ux-writing-dead-cliche](https://github.com/BoxPistols/ux-writing-dead-cliche) (MIT) and runs its checker from the npm package `textlint-rule-ux-writing-dead-cliche`.
 
 ## Workflow
@@ -65,6 +80,7 @@ The `dead-cliche-writing` skill comes from [BoxPistols/ux-writing-dead-cliche](h
 - Claude Code with plugin support
 - macOS and Linux
 - [Bun](https://bun.sh) on `PATH` (hooks run as TypeScript on Bun, and Claude Code installs the plugin's dependencies with `bun install`)
+- `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` for the compaction and Bash output hooks
 
 ## Configuration
 

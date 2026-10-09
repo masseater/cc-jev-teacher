@@ -9,7 +9,8 @@ import type {
 } from "claude-code";
 
 import { compact, reductionRatio, resolveOptions } from "./compact.js";
-import { buildJevRequest, DEFAULT_MODEL, parseJevResponse } from "./request.js";
+import { type JevBackend, moduleBackend, systemOneRequest } from "../backend.ts";
+import { parseJevResponse } from "./request.js";
 import type {
   CompactOptions,
   CompactResult,
@@ -22,7 +23,6 @@ import type {
 const HOOK_DEFAULTS = {
   compactAtPercent: 60,
   minReductionRatio: 0.25,
-  model: DEFAULT_MODEL,
 };
 
 export type HookFetchInit = {
@@ -41,10 +41,8 @@ export type HookFetchResponse = {
 export type HookFetch = (url: string, init?: HookFetchInit) => Promise<HookFetchResponse>;
 
 export type HookConfig = CompactOptions & {
-  apiKey?: string;
   compactAtPercent: number;
   minReductionRatio: number;
-  model: string;
 };
 
 function optionNumber(options: PluginOptions, key: string, fallback: number): number {
@@ -74,20 +72,17 @@ export function resolveHookConfig(options: PluginOptions): HookConfig {
     ...numbers,
     compactAtPercent: optionNumber(options, "compactAtPercent", HOOK_DEFAULTS.compactAtPercent),
     minReductionRatio: optionNumber(options, "minReductionRatio", HOOK_DEFAULTS.minReductionRatio),
-    model: optionString(options, "model") ?? HOOK_DEFAULTS.model,
   };
-  const apiKey = optionString(options, "apiKey");
-  if (apiKey) config.apiKey = apiKey;
   const goal = optionString(options, "goal");
   if (goal) config.goal = goal;
   return config;
 }
 
-/** A `JevAsker` over the engine's `$.http.fetch`. */
-export function jevAsker(fetchFn: HookFetch, apiKey: string, model: string): JevAsker {
+/** A `JevAsker` over the engine's `$.http.fetch`, sending to the plugin's backend. */
+export function jevAsker(fetchFn: HookFetch, backend: JevBackend): JevAsker {
   return {
     async ask(state, questions) {
-      const request = buildJevRequest({ apiKey, model }, state, questions);
+      const request = systemOneRequest(backend, state, questions);
       const response = await fetchFn(request.url, {
         method: request.method,
         headers: request.headers,
@@ -161,10 +156,11 @@ export type SessionCompaction = {
 export async function compactSession(
   messages: readonly SessionMessage[],
   config: HookConfig,
+  backend: JevBackend,
   fetchFn: HookFetch,
 ): Promise<SessionCompaction> {
-  if (!config.apiKey) throw new Error("TYPESAFE_API_KEY is not configured");
-  const result = await compact(messages, jevAsker(fetchFn, config.apiKey, config.model), config);
+  if (!backend.apiKey) throw new Error("no OpenRouter or TypeSafe API key is configured");
+  const result = await compact(messages, jevAsker(fetchFn, backend), config);
   return { result, messages: toSessionMessages(messages, result.messages) };
 }
 
@@ -220,23 +216,20 @@ export function decisionLogLines(
   );
 }
 
-async function getApiKey(
+async function backendOf(
   $: {
     env: { get: (name: string) => Promise<string | undefined> };
     settings: { read: () => Promise<Readonly<Record<string, unknown>>> };
   },
-  config: HookConfig,
-): Promise<string | undefined> {
-  if (config.apiKey) return config.apiKey;
-  const fromEnv = await $.env.get("TYPESAFE_API_KEY");
-  if (fromEnv) return fromEnv;
-  const settings = await $.settings.read();
-  const env = settings["env"];
-  if (env && typeof env === "object") {
-    const value = (env as Record<string, unknown>)["TYPESAFE_API_KEY"];
-    if (typeof value === "string" && value) return value;
-  }
-  return undefined;
+  options: PluginOptions,
+): Promise<JevBackend> {
+  const env = {
+    OPENROUTER_API_KEY: await $.env.get("OPENROUTER_API_KEY"),
+    TYPESAFE_API_KEY: await $.env.get("TYPESAFE_API_KEY"),
+    OPENROUTER_MODEL: await $.env.get("OPENROUTER_MODEL"),
+    CC_JEV_TEACHER_ALLOW_TRAINING: await $.env.get("CC_JEV_TEACHER_ALLOW_TRAINING"),
+  };
+  return moduleBackend(options, env, (await $.settings.read())["env"]);
 }
 
 function notify(
@@ -258,20 +251,20 @@ export const register: Register = (on: On, options: PluginOptions) => {
 
   on("session.compact", async ($, event, next) => {
     try {
-      const config = { ...configured, apiKey: await getApiKey($, configured) };
       const { result, messages } = await compactSession(
         event.messages,
-        config,
+        configured,
+        await backendOf($, options),
         async (url, init) => {
           const response = await $.http.fetch(url, init);
           return { status: response.status, ok: response.ok, text: response.text };
         },
       );
       for (const line of decisionLogLines(result)) $.ui.log(line);
-      if (reductionRatio(result) < config.minReductionRatio) {
+      if (reductionRatio(result) < configured.minReductionRatio) {
         notify(
           $,
-          `fallback to built-in summary (below ${percent(config.minReductionRatio)} minimum: ${summarize(result)})`,
+          `fallback to built-in summary (below ${percent(configured.minReductionRatio)} minimum: ${summarize(result)})`,
         );
         return next(event);
       }

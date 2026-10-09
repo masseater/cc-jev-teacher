@@ -20,7 +20,7 @@ export default defineConfig({
       check: {
         cache: false,
         command:
-          "sh -c 'vp check && git ls-files -z \"*.md\" | xargs -0 bun node_modules/.bin/dead-cliche check && bunx @anthropic-ai/claude-code plugin validate .'",
+          "sh -c 'vp check && vp test run && git ls-files -z \"*.md\" | xargs -0 bun node_modules/.bin/dead-cliche check && bunx @anthropic-ai/claude-code plugin validate .'",
       },
     },
   },
