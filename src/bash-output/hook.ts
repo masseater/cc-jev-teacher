@@ -111,10 +111,7 @@ export function goalFromMessages(messages: readonly SessionMessage[]): string {
 }
 
 async function backendOf(
-  $: {
-    env: { get: (name: string) => Promise<string | undefined> };
-    settings: { read: () => Promise<Readonly<Record<string, unknown>>> };
-  },
+  $: { env: { get: (name: string) => Promise<string | undefined> } },
   options: PluginOptions,
 ): Promise<JevBackend> {
   const env = {
@@ -123,7 +120,7 @@ async function backendOf(
     OPENROUTER_MODEL: await $.env.get("OPENROUTER_MODEL"),
     CC_JEV_TEACHER_ALLOW_TRAINING: await $.env.get("CC_JEV_TEACHER_ALLOW_TRAINING"),
   };
-  return moduleBackend(options, env, (await $.settings.read())["env"]);
+  return moduleBackend(options, env);
 }
 
 export const register: Register = (on: On, options: PluginOptions) => {

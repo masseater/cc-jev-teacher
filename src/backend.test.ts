@@ -61,17 +61,13 @@ describe("moduleBackend", () => {
     const backend = moduleBackend(
       { openrouter_api_key: "from-option", openrouter_model: "typesafe/jev-1.13" },
       { OPENROUTER_API_KEY: "from-env" },
-      undefined,
     );
     expect(backend.apiKey).toBe("from-option");
     expect(backend.model).toBe("typesafe/jev-1.13");
   });
 
-  it("falls back to the environment, then to the env of settings.json", () => {
-    expect(moduleBackend({}, { TYPESAFE_API_KEY: "from-env" }, undefined).apiKey).toBe("from-env");
-    expect(moduleBackend({}, {}, { OPENROUTER_API_KEY: "from-settings" }).baseURL).toBe(
-      "https://openrouter.ai/api",
-    );
-    expect(moduleBackend({}, {}, undefined).apiKey).toBe("");
+  it("falls back to the environment", () => {
+    expect(moduleBackend({}, { TYPESAFE_API_KEY: "from-env" }).apiKey).toBe("from-env");
+    expect(moduleBackend({}, {}).apiKey).toBe("");
   });
 });
