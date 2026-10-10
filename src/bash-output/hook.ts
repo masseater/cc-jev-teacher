@@ -13,6 +13,14 @@ import {
 import type { TrimOutputResult } from "./output.js";
 import type { JevAsker } from "./jev.js";
 import { looksSecret } from "./secrets.js";
+import {
+  appendedLog,
+  count,
+  REQUEST_LOG,
+  REQUEST_LOG_IGNORE,
+  requestLine,
+  tally,
+} from "../request-log.ts";
 import { classifyInformation } from "./retention.js";
 import type { InformationCategory } from "./retention.js";
 
@@ -134,6 +142,8 @@ export const register: Register = (on: On, options: PluginOptions) => {
       answer.deny !== undefined ? "denied" : answer.isError ? "tool_error" : "missing_result";
     let stage = "result";
     let requests = 0;
+    const sent = tally();
+    let model = "";
     let sourceChars: number | null = null;
     let sourceEstimatedTokens: number | null = null;
     let modelVisibleBudgetChars: number | null = null;
@@ -167,6 +177,7 @@ export const register: Register = (on: On, options: PluginOptions) => {
       if (looksSecret(event.command, combined)) return answer;
       stage = "credentials";
       const backend = await backendOf($, options);
+      model = backend.model;
       decision = "missing_key";
       if (!backend.apiKey) return answer;
       stage = "history";
@@ -209,6 +220,7 @@ export const register: Register = (on: On, options: PluginOptions) => {
           if (path) await (archived ??= saveOutput());
           stage = "scoring";
           requests += 1;
+          count(sent, init?.body);
           const response = await $.http.fetch(url, init);
           return { status: response.status, ok: response.ok, text: response.text };
         }, backend),
@@ -249,6 +261,18 @@ export const register: Register = (on: On, options: PluginOptions) => {
       $.ui.log(`bash output trim skipped (stage=${stage})`);
       return answer;
     } finally {
+      if (sent.requests > 0) {
+        try {
+          if (!(await $.fs.exists(REQUEST_LOG_IGNORE))) await $.fs.write(REQUEST_LOG_IGNORE, "*\n");
+          const previous = (await $.fs.exists(REQUEST_LOG)) ? await $.fs.read(REQUEST_LOG) : "";
+          await $.fs.write(
+            REQUEST_LOG,
+            appendedLog(previous, requestLine("bash-output", model, sent)),
+          );
+        } catch {
+          $.ui.log("request log not written");
+        }
+      }
       if (configured.diagnostics) {
         try {
           $.ui.log(

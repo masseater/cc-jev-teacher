@@ -11,6 +11,14 @@ import type {
 import { compact, reductionRatio, resolveOptions } from "./compact.js";
 import { type JevBackend, moduleBackend, systemOneRequest } from "../backend.ts";
 import { parseJevResponse } from "./request.js";
+import {
+  appendedLog,
+  count,
+  REQUEST_LOG,
+  REQUEST_LOG_IGNORE,
+  requestLine,
+  tally,
+} from "../request-log.ts";
 import type {
   CompactOptions,
   CompactResult,
@@ -247,12 +255,15 @@ export const register: Register = (on: On, options: PluginOptions) => {
   let compacting = false;
 
   on("session.compact", async ($, event, next) => {
+    const sent = tally();
+    const backend = await backendOf($, options);
     try {
       const { result, messages } = await compactSession(
         event.messages,
         configured,
-        await backendOf($, options),
+        backend,
         async (url, init) => {
+          count(sent, init?.body);
           const response = await $.http.fetch(url, init);
           return { status: response.status, ok: response.ok, text: response.text };
         },
@@ -276,6 +287,19 @@ export const register: Register = (on: On, options: PluginOptions) => {
         `fallback to built-in summary (${error instanceof Error ? error.message : String(error)})`,
       );
       return next(event);
+    } finally {
+      if (sent.requests > 0) {
+        try {
+          if (!(await $.fs.exists(REQUEST_LOG_IGNORE))) await $.fs.write(REQUEST_LOG_IGNORE, "*\n");
+          const previous = (await $.fs.exists(REQUEST_LOG)) ? await $.fs.read(REQUEST_LOG) : "";
+          await $.fs.write(
+            REQUEST_LOG,
+            appendedLog(previous, requestLine("compaction", backend.model, sent)),
+          );
+        } catch {
+          $.ui.log("request log not written");
+        }
+      }
     }
   });
 

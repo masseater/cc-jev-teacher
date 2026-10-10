@@ -3,7 +3,7 @@ import { defineHook, runHook } from "cc-hooks-ts";
 import { collectToolCalls, fitState, type Message } from "./compaction/index.ts";
 
 import { type Checks, failedOf, hasApiKey } from "./jev-checks.ts";
-import { entriesOf, messagesOf, stopFeedbackOf } from "./transcript.ts";
+import { entriesOf, messagesOf, stopFeedbackOf, toolUsesOf } from "./transcript.ts";
 
 const CHANGING_TOOLS = new Set(["Write", "Edit", "MultiEdit", "NotebookEdit", "Bash"]);
 const RECENT = 6;
@@ -51,15 +51,16 @@ const hook = defineHook({
   shouldRun: hasApiKey,
   run: async (context) => {
     const { input } = context;
+    const turn = entriesOf(input.transcript_path);
+    if (!toolUsesOf(turn).some((use) => CHANGING_TOOLS.has(use.name ?? "")))
+      return context.success();
     // Each reason is given at most once per turn.
-    const given = stopFeedbackOf(entriesOf(input.transcript_path));
+    const given = stopFeedbackOf(turn);
     const pending: Checks = Object.fromEntries(
       Object.entries(checks).filter(([, check]) => !given.includes(check.reason)),
     );
     if (Object.keys(pending).length === 0) return context.success();
     const messages = messagesOf(input.transcript_path);
-    if (!messages.some((message) => message.toolUses.some((use) => CHANGING_TOOLS.has(use.tool))))
-      return context.success();
     const history = historyOf(messages);
     const failed = await failedOf(
       {
