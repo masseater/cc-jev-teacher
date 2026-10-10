@@ -101,7 +101,7 @@ fields, so use a descendant matcher such as
 `field: name`. `expandoChar: _` makes metavariable patterns parse where `$`
 is not valid source syntax. A different custom grammar needs its own tree
 inspection and matcher; most have only `bare` and `located` state support.
-See [the custom parser reference](../../../docs/reference.md#a-language-ast-grep-does-not-have-built-in).
+See [the custom parser reference](https://github.com/mizchi/jev-lint/blob/af58a3bd20693f828ff6353e3543c0ab5bb7bad4/docs/reference.md#a-language-ast-grep-does-not-have-built-in).
 
 Keep the config active when validating this rule: `--no-config` would also
 remove its parser declaration. Use `-R <rule-file> --config .jev-lint.yaml`

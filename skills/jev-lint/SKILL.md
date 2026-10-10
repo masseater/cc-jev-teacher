@@ -31,9 +31,10 @@ Knowing which half you are working on is most of the job.
    touching the wording.
 3. **Never put a threshold in the sentence.** The cutoff is `threshold:`; baking it
    into the question means every recalibration rewrites the question.
-4. **The API key lives in the environment** (`TYPESAFE_API_KEY`), never in
-   `.jev-lint.yaml`, which belongs in version control. `apiKey:` in the file
-   is a hard error.
+4. **The API key lives in the environment**, in the variable `apiKeyEnv:` in
+   `.jev-lint.yaml` names (`TYPESAFE_API_KEY` when unset), never in the file
+   itself, which belongs in version control. `apiKey:` in the file is a hard
+   error.
 5. **A finding is a candidate for a human, not a verdict.** Measured on real
    code about one finding in five was wrong. Read each against the code.
 6. **Record any run you draw a conclusion from** (`--record r.json`).
@@ -50,12 +51,21 @@ Knowing which half you are working on is most of the job.
 | know what every field means, `score` vs `noul`, the `state` arms                              | [references/rule-fields.md](references/rule-fields.md)                                                                            |
 | fit a cutoff, build a rule's evals, judge whether a rule works                                | [references/calibration.md](references/calibration.md)                                                                            |
 | judge commit messages against their diffs, or a change against the repository's own AGENTS.md | `jev-lint commits`, below                                                                                                         |
-| install it as a git hook, and know what blocks a commit                                       | [../../docs/use-hooks.md](../../docs/use-hooks.md)                                                                                |
+| install it as a git hook, and know what blocks a commit                                       | [use-hooks.md](https://github.com/mizchi/jev-lint/blob/af58a3bd20693f828ff6353e3543c0ab5bb7bad4/docs/use-hooks.md)                |
 
 ## Running it
 
+The model and its endpoint come from `.jev-lint.yaml`. With no `baseUrl:`
+it asks TypeSafe with `TYPESAFE_API_KEY`; to ask OpenRouter instead:
+
+```yaml
+baseUrl: https://openrouter.ai/api
+apiKeyEnv: OPENROUTER_API_KEY
+model: perplexity/pplx-decider-v1.1-27b # or typesafe/jev-1.13
+```
+
 ```bash
-export TYPESAFE_API_KEY=...            # or TYPESAFEAI_API_KEY
+export OPENROUTER_API_KEY=...          # whatever apiKeyEnv names
 npx -y jev-lint check src --dry-run    # plan and price. Makes NO request.
 npx -y jev-lint check src              # judge whole files
 npx -y jev-lint run fn-name-promises src        # one shipped rule; rust/<id> for one language
@@ -96,7 +106,7 @@ non-zero exit, so the shipped bodies let 3 through deliberately: being unable
 to commit while offline is how a hook gets deleted rather than fixed. Both
 bodies are tracked at `.jev-lint/hooks/<name>`, reviewable like any other
 file, with a shim in git's hooks directory that finds and runs them --
-[../../docs/use-hooks.md](../../docs/use-hooks.md). `--staged` reviews what the commit will contain: no untracked files,
+[use-hooks.md](https://github.com/mizchi/jev-lint/blob/af58a3bd20693f828ff6353e3543c0ab5bb7bad4/docs/use-hooks.md). `--staged` reviews what the commit will contain: no untracked files,
 no unstaged edits, though a partially staged file is judged as it is on disk.
 When paths are configured or given, `review` scans only the changed files
 under them, never the whole tree.
@@ -104,7 +114,7 @@ under them, never the whole tree.
 **Settings**: `.jev-lint.yaml` (or `jev-lint.yaml`, `.jevlint.yml`, any spelling; two in one directory is an error), nearest one searching upwards, a flag beats
 it. `languages:` declares a grammar ast-grep does not have built in (a
 tree-sitter parser compiled to a dynamic library — see
-[the reference](../../docs/reference.md#a-language-ast-grep-does-not-have-built-in);
+[the reference](https://github.com/mizchi/jev-lint/blob/af58a3bd20693f828ff6353e3543c0ab5bb7bad4/docs/reference.md#a-language-ast-grep-does-not-have-built-in);
 MoonBit is measured there). `files:` there lets `jev-lint check` take no argument; `rules:` picks the
 rules, ESLint-style — `fn-name-promises: on`, `rust/fn-name-promises: off`,
 `comment-describes-block: { threshold: 0.7, severity: error }` — from the shipped
@@ -119,7 +129,7 @@ no earlier verdict is reused (the cache is `.jev-lint/baseline.json`; `-c
 `commits --staged`. `extends: true` inherits top-level `rules:` and applies
 the hook entries over it; `extends: false` uses only hook entries. Without the
 section, staged runs use top-level `rules:`. See
-[the hook guide](../../docs/use-hooks.md#pre-commit).
+[the hook guide](https://github.com/mizchi/jev-lint/blob/af58a3bd20693f828ff6353e3543c0ab5bb7bad4/docs/use-hooks.md#pre-commit).
 
 **Two output lines that are never noise:**
 

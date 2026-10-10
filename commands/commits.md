@@ -6,8 +6,9 @@ argument-hint: "[--base <ref>] [--squash]"
 Run jev-lint's commit rule on this repository and report what it found,
 judged, not just listed.
 
-1. Confirm `TYPESAFE_API_KEY` (or `TYPESAFEAI_API_KEY`) is set. If not, stop
-   and say so.
+1. Confirm the API key is set in the environment: the variable `apiKeyEnv:`
+   in `.jev-lint.yaml` names, or `TYPESAFE_API_KEY` (or `TYPESAFEAI_API_KEY`)
+   when the config sets none. If not, stop and say so.
 2. Plan first, spend nothing: `npx -y jev-lint commits $ARGUMENTS --dry-run`.
    With no `--base`, this is `@{upstream}..HEAD`; `--base main` is the
    branch. Report the commit count and price; a commit marked `diff cut to

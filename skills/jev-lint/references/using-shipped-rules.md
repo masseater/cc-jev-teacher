@@ -175,8 +175,11 @@ two or three rules that produced false positives with
 ```yaml
 - run: npx -y jev-lint review --base "origin/${{ github.base_ref }}" --format github
   env:
-    TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+    OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 ```
+
+The variable is the one `apiKeyEnv:` in `.jev-lint.yaml` names;
+`TYPESAFE_API_KEY` when the config sets none.
 
 Review mode judges only the lines the diff touched. The cache,
 `.jev-lint/baseline.json`, is meant to be committed: reviewers see the

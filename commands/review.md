@@ -6,8 +6,10 @@ argument-hint: "[--base <ref>] [paths...]"
 Run jev-lint in review mode on this repository and report what it found,
 judged, not just listed.
 
-1. Confirm `TYPESAFE_API_KEY` (or `TYPESAFEAI_API_KEY`) is set in the
-   environment. If not, stop and say so; nothing below can run without it.
+1. Confirm the API key is set in the environment: the variable `apiKeyEnv:`
+   in `.jev-lint.yaml` names, or `TYPESAFE_API_KEY` (or `TYPESAFEAI_API_KEY`)
+   when the config sets none. If not, stop and say so;
+   nothing below can run without it.
 2. Plan first, spend nothing:
    `npx -y jev-lint review $ARGUMENTS --dry-run`
    With no `--base`, this diffs the uncommitted changes including untracked
