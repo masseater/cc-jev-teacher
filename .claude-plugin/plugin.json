@@ -1,6 +1,6 @@
 {
   "name": "cc-jev-teacher",
-  "description": "Claude Code hooks that make Claude finish the job: Jev (TypeSafe directly or through OpenRouter) judges each tool call and final report, and sends Claude back to work on script edits, unrequested config relaxation, building before searching, and unfinished, verbose or unmeasured reports. It also keeps context small by compacting without a summary and trimming long Bash output",
+  "description": "Claude Code hooks that make Claude finish the job: Jev (TypeSafe directly or through OpenRouter) judges each tool call and final report, and sends Claude back to work on script edits, unrequested config relaxation, building before searching, and unfinished, verbose or unmeasured reports. It also keeps context small by compacting without a summary and trimming long Bash output, and ships the jev-lint skill and commands for jev-lint pointed at TypeSafe or OpenRouter",
   "author": {
     "name": "masseater",
     "url": "https://github.com/masseater"
@@ -15,7 +15,8 @@
     "jev",
     "openrouter",
     "compaction",
-    "context"
+    "context",
+    "jev-lint"
   ],
   "userConfig": {
     "typesafe_api_key": {

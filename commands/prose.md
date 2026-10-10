@@ -13,8 +13,9 @@ agenda`, `document-abandons-a-question`). The norm's general form,
 candidates under `experiments/rule-candidates/markdown/`; add `-R` on
 that directory to run them too, at the precision their reports state.
 
-1. Confirm `TYPESAFE_API_KEY` (or `TYPESAFEAI_API_KEY`) is set. If not, stop
-   and say so.
+1. Confirm the API key is set in the environment: the variable `apiKeyEnv:`
+   in `.jev-lint.yaml` names, or `TYPESAFE_API_KEY` (or `TYPESAFEAI_API_KEY`)
+   when the config sets none. If not, stop and say so.
 2. Plan first, spend nothing:
    `npx -y jev-lint check $ARGUMENTS -R node_modules/jev-lint/rules/markdown --dry-run`
    (in a checkout of jev-lint, `-R rules/markdown`). Report the section
