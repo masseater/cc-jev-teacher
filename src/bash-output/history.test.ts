@@ -201,7 +201,7 @@ describe("history in output scoring", () => {
     });
   });
 
-  it("asks every history segment in parallel and keeps the maximum vote", async () => {
+  it("sends only the newest history segment and scores chunks in parallel", async () => {
     const messages = [
       message("user", "Keep alpha."),
       ...Array.from({ length: 30 }, (_, i) =>
@@ -242,13 +242,13 @@ describe("history in output scoring", () => {
       maxStateTokens: 4_000,
       maxScoringRequests: 200,
     });
-    expect(seen.size).toBeGreaterThan(2);
-    expect(releases.length).toBeGreaterThan(seen.size);
+    expect(seen.size).toBe(1);
+    expect(releases.length).toBeGreaterThan(0);
     releases.forEach((release) => release());
     const result = await pending;
     for (const ids of seen.values())
       expect([...ids].sort()).toEqual(Array.from({ length: 10 }, (_, i) => `c${i + 1}`).sort());
-    expect([...seen.keys()].join("")).toContain("Keep alpha.");
+    expect([...seen.keys()].join("")).not.toContain("Keep alpha.");
     expect([...seen.keys()].join("")).toContain("REQUIRED_BY_TOOL_RESULT");
     expect(result.scores[3]).toBe(0.9);
     expect(result.output).toContain("module 65:");
@@ -278,7 +278,7 @@ describe("history in output scoring", () => {
     expect(calls).toBeGreaterThan(2);
   });
 
-  it("repartitions all history on context-limit retries without losing results", async () => {
+  it("retries with a smaller state after a context-limit error", async () => {
     const seen: { history: HistoryEntry[]; chunks: { id: string }[] }[] = [];
     let retry = false;
     const messages = [
@@ -308,11 +308,7 @@ describe("history in output scoring", () => {
     const histories = [
       ...new Map(retried.map((state) => [JSON.stringify(state.history), state.history])).values(),
     ];
-    const toolParts = histories.flat().filter((entry) => entry.i === 1);
-    expect(toolParts.map((entry) => entry.tool_results?.[0]?.result ?? "").join("")).toBe(
-      historyEntries(messages)[1]!.tool_results![0]!.result,
-    );
-    expect(JSON.stringify(histories)).toContain("First requirement.");
+    expect(histories.length).toBe(1);
     expect(JSON.stringify(histories)).toContain("Last decision.");
     expect(result.trimmed).toBe(true);
   });

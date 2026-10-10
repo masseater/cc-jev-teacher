@@ -191,7 +191,7 @@ describe("category scoring state", () => {
         );
         histories.add(JSON.stringify((state as { history: unknown }).history));
       }
-      expect(histories.size).toBeGreaterThan(1);
+      expect(histories.size).toBe(1);
       expect(result.trimmed).toBe(true);
       expect(result.output).toContain("ERROR: required diagnostic");
       expect(result.output).toContain(noise.split("\n")[0]);

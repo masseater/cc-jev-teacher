@@ -9,6 +9,7 @@ const DEFAULT_CHUNK_LINES = 20;
 const DEFAULT_KEEP_THRESHOLD = 0.5;
 const DEFAULT_MAX_STATE_TOKENS = 25_000;
 const MAX_REQUEST_TOKENS = 30_000;
+const MAX_HISTORY_TOKENS = 4_000;
 
 const MAX_CHUNKS = 200;
 const MAX_LINE_CHARS = 2_000;
@@ -438,8 +439,11 @@ async function trimOutputAttempt(
   );
   const histories = splitHistory(
     input.messages ?? [],
-    maxStateTokens - Math.min(outputTokens, Math.ceil(maxStateTokens / 2)),
-  );
+    Math.min(
+      MAX_HISTORY_TOKENS,
+      maxStateTokens - Math.min(outputTokens, Math.ceil(maxStateTokens / 2)),
+    ),
+  ).slice(-1);
   const omitted = new Set(chunks.map((_, index) => index));
   const scoredSegments = Array<number>(chunks.length).fill(0);
   const limitedAsker: JevAsker = {
@@ -457,6 +461,14 @@ async function trimOutputAttempt(
     );
     if (requests.length === 0)
       return untrimmed(input.output, chunks.length, [], "no_scoring_capacity", options.onDecision);
+    const covered = new Set(requests.flatMap(({ batch }) => batch));
+    const unscored = new Set(chunks.flatMap((chunk, index) => (covered.has(chunk) ? [] : [index])));
+    if (
+      maxChars > 0 &&
+      renderOutput(input, chunks, unscored, new Map(), options.compactMarkers === true).length >
+        maxChars
+    )
+      return untrimmed(input.output, chunks.length, [], "budget_unfit", options.onDecision);
     const answered = await Promise.allSettled(
       requests.map(async ({ state, batch }) =>
         limitedAsker.ask(state, Object.assign({}, ...batch.map(questionFor))),

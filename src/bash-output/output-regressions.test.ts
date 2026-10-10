@@ -41,7 +41,7 @@ describe("complete scoring and request limits", () => {
   });
 
   it.each([0, 1])(
-    "allows at most one initial request plus %i additional requests",
+    "sends no request when one initial request plus %i more cannot fit the output",
     async (extra) => {
       let calls = 0;
       const output = Array.from(
@@ -58,8 +58,7 @@ describe("complete scoring and request limits", () => {
         },
         { maxChars: 8_000, maxScoringRequests: extra },
       );
-      expect(calls).toBeLessThanOrEqual(1 + extra);
-      expect(calls).toBeGreaterThan(0);
+      expect(calls).toBe(0);
     },
   );
 
@@ -95,7 +94,7 @@ describe("complete scoring and request limits", () => {
     expect(result.output).toContain("serial=unseen-release");
   });
 
-  it("preserves chunks not scored against every history segment", async () => {
+  it("trims only the chunks its single allowed request scored", async () => {
     const output = Array.from(
       { length: 200 },
       (_, index) => `module ${index} ${"cache ".repeat(55)}`,
@@ -121,8 +120,8 @@ describe("complete scoring and request limits", () => {
       { maxStateTokens: 6_000, maxScoringRequests: 0 },
     );
     expect(calls).toBe(1);
-    expect(result.output).toBe(output);
-    expect(result.trimmed).toBe(false);
+    expect(result.trimmed).toBe(true);
+    expect(result.output).toContain(output.split("\n").at(-2));
   });
 });
 

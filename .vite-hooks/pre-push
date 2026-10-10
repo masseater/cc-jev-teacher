@@ -1,14 +1,16 @@
 # jev-lint blocks only on a rule with `severity: error`; exit 3 (requests failed) does not block.
 if [ -z "$TYPESAFE_API_KEY" ] && [ -z "$TYPESAFEAI_API_KEY" ]; then
-  echo "jev-lint: no API key in the environment, skipping the commit review" >&2
+  echo "jev-lint: no API key in the environment, skipping the review" >&2
   exit 0
 fi
 if ! git rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1; then
-  echo "jev-lint: no upstream for this branch yet, skipping the commit review" >&2
+  echo "jev-lint: no upstream for this branch yet, skipping the review" >&2
   exit 0
 fi
 # Hook runs cache outside the tree so they do not leave the committed .jev-lint/baseline.json modified.
 export JEV_LINT_CACHE="$(git rev-parse --absolute-git-dir)/jev-lint-cache.json"
-bun node_modules/.bin/jev-lint commits '@{upstream}..HEAD' --fail-on error
-status=$?
-[ "$status" -eq 0 ] || [ "$status" -eq 3 ] || exit "$status"
+for args in "review --base @{upstream}" "commits @{upstream}..HEAD"; do
+  bun node_modules/.bin/jev-lint $args --fail-on error
+  status=$?
+  [ "$status" -eq 0 ] || [ "$status" -eq 3 ] || exit "$status"
+done

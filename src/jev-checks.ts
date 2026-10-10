@@ -7,7 +7,11 @@ import {
   TypeSafeClient,
 } from "@typesafe-ai/sdk";
 
+import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { basename } from "node:path";
+
 import { jevBackend, stateFor } from "./backend.ts";
+import { count, REQUEST_LOG, REQUEST_LOG_DIR, requestLine, tally } from "./request-log.ts";
 
 export const THRESHOLD = 0.7;
 
@@ -22,6 +26,22 @@ const backend = jevBackend({
 
 export const hasApiKey = () => backend.apiKey !== "";
 
+const logRequest = (body: string) => {
+  try {
+    const sent = tally();
+    count(sent, body);
+    mkdirSync(REQUEST_LOG_DIR, { recursive: true });
+    const ignore = `${REQUEST_LOG_DIR}/.gitignore`;
+    if (!existsSync(ignore)) writeFileSync(ignore, "*\n");
+    appendFileSync(
+      REQUEST_LOG,
+      requestLine(basename(process.argv[1] ?? "", ".ts"), backend.model, sent),
+    );
+  } catch {
+    return;
+  }
+};
+
 // Sends one System One request to the configured backend.
 export const systemOne = <const Q extends Questions>(request: SystemOneRequest<Q>) => {
   const { apiKey, baseURL, model, extra } = backend;
@@ -30,6 +50,7 @@ export const systemOne = <const Q extends Questions>(request: SystemOneRequest<Q
     ...request,
     state: stateFor(backend, request.state),
   };
+  logRequest(JSON.stringify(body));
   return new TypeSafeClient({
     apiKey,
     baseURL,

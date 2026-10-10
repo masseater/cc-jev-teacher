@@ -4,6 +4,10 @@ import { register } from "./hook.ts";
 import type { HookConfig, HookFetchInit } from "./hook.ts";
 import type { ConversationMessage } from "./history.js";
 import type { JevQuestions } from "./jev.js";
+import { REQUEST_LOG_DIR } from "../request-log.ts";
+
+const archiveWrites = (write: { mock: { calls: unknown[][] } }) =>
+  write.mock.calls.filter(([path]) => !String(path).startsWith(REQUEST_LOG_DIR));
 
 type BashHook = MatchedHook<"tool.call", { tool: "Bash" }>;
 const bashResult = (answer: { result?: unknown }) =>
@@ -100,7 +104,7 @@ describe("Bash pruning diagnostics", () => {
     expect(h.log).toHaveBeenCalledWith(expect.stringContaining('"requestLimit":1'));
   });
 
-  it("preserves an unscored tail when its preview only permits one request", async () => {
+  it("skips scoring when one request cannot cover enough output to fit the preview", async () => {
     const h = harness({ diagnostics: true });
     const full =
       "start\n" +
@@ -110,7 +114,7 @@ describe("Bash pruning diagnostics", () => {
     h.original.text = "p".repeat(192);
     h.read.mockResolvedValue(full);
     expect(await h.run()).toBe(h.original);
-    expect(h.fetch).toHaveBeenCalledTimes(1);
+    expect(h.fetch).not.toHaveBeenCalled();
     expect(h.log).toHaveBeenCalledWith(expect.stringContaining('"requestLimit":1'));
   });
 
@@ -129,7 +133,7 @@ describe("Bash pruning diagnostics", () => {
       expect(bashResult(result)?.stdout).toContain("ERROR: deployment blocked");
       expect(bashResult(result)?.stdout).toContain("full output: /project/complete-log.txt");
       expect(bashResult(result)?.stderr).toBe("");
-      expect(h.write).not.toHaveBeenCalled();
+      expect(archiveWrites(h.write)).toEqual([]);
       expect(h.log).toHaveBeenCalledWith(expect.stringContaining('"modelVisibleBudgetChars":2250'));
     },
   );
@@ -248,7 +252,7 @@ describe("Bash hook conversation state", () => {
     const h = harness({ maxStateTokens: 10 });
     expect(await h.run()).toBe(h.original);
     expect(h.fetch).not.toHaveBeenCalled();
-    expect(h.write).not.toHaveBeenCalled();
+    expect(archiveWrites(h.write)).toEqual([]);
   });
 
   it("returns the original result if reading history fails", async () => {
@@ -256,7 +260,7 @@ describe("Bash hook conversation state", () => {
     h.readMessages.mockRejectedValueOnce(new Error("transcript unavailable"));
     expect(await h.run()).toBe(h.original);
     expect(h.fetch).not.toHaveBeenCalled();
-    expect(h.write).not.toHaveBeenCalled();
+    expect(archiveWrites(h.write)).toEqual([]);
   });
 
   it("keeps the original output if one parallel history query fails", async () => {
@@ -323,7 +327,7 @@ describe("Bash output archives", () => {
     h.read.mockResolvedValue(complete);
     const result = await h.run();
     expect(h.read).toHaveBeenCalledWith(path);
-    expect(h.write).not.toHaveBeenCalled();
+    expect(archiveWrites(h.write)).toEqual([]);
     expect(h.fetch).toHaveBeenCalled();
     expect(result.result).toMatchObject({ stdout: expect.stringContaining("stderr stays intact") });
     expect(result.result).toMatchObject({
@@ -348,7 +352,7 @@ describe("Bash output archives", () => {
         h.fetch.mockRejectedValue(new Error("network unavailable"));
       }
       expect(await h.run()).toBe(h.original);
-      expect(h.write).not.toHaveBeenCalled();
+      expect(archiveWrites(h.write)).toEqual([]);
       if (condition !== "scoring fails") {
         expect(h.readMessages).not.toHaveBeenCalled();
         expect(h.fetch).not.toHaveBeenCalled();
@@ -399,7 +403,7 @@ describe("Bash output archives", () => {
     const h = harness();
     h.original.result.stdout += "\npassword=synthetic-test-value";
     const result = await h.run();
-    expect(h.write).not.toHaveBeenCalled();
+    expect(archiveWrites(h.write)).toEqual([]);
     expect(h.fetch).not.toHaveBeenCalled();
     expect(result).toBe(h.original);
   });
