@@ -2,7 +2,7 @@ import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 import { collectToolCalls, fitState, type Message } from "./compaction/index.ts";
 
-import { type Checks, failedOf, hasApiKey } from "./jev-checks.ts";
+import { type Checks, hasApiKey, jevFor } from "./jev-checks.ts";
 import { entriesOf, messagesOf, stopFeedbackOf, toolUsesOf } from "./transcript.ts";
 
 const CHANGING_TOOLS = new Set(["Write", "Edit", "MultiEdit", "NotebookEdit", "Bash"]);
@@ -62,7 +62,7 @@ const hook = defineHook({
     if (Object.keys(pending).length === 0) return context.success();
     const messages = messagesOf(input.transcript_path);
     const history = historyOf(messages);
-    const failed = await failedOf(
+    const failed = await jevFor(context.input).failedOf(
       {
         context:
           "`history` is a whole coding-assistant session, oldest first. Tool outputs are replaced by a short note and long texts may be abridged.",

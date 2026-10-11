@@ -4,7 +4,7 @@ import { basename, dirname, join, relative } from "node:path";
 import { type JsonValue, noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { type Checks, hasApiKey, noulsOf, yesKeysOf } from "./jev-checks.ts";
+import { type Checks, hasApiKey, type Jev, jevFor } from "./jev-checks.ts";
 import { CONFIG_DIR, isScratch } from "./scratch-path.ts";
 import { aiJapanese } from "./japanese.ts";
 import { repositoryOf } from "./repository.ts";
@@ -134,6 +134,7 @@ const MAX_LINES = 5;
 
 // Asks Jev, line by line, which lines make each failed check fail, and keeps the lines nearly as likely as the likeliest.
 const linesOf = async (
+  jev: Jev,
   state: { document: string } & Record<string, JsonValue>,
   checks: Checks,
   failed: Array<string>,
@@ -158,7 +159,7 @@ const linesOf = async (
       ),
   );
   if (Object.keys(questions).length === 0) return new Map<string, Array<string>>();
-  const answers = await noulsOf(state, questions);
+  const answers = await jev.noulsOf(state, questions);
   return new Map(
     failed.map((key) => {
       const ofKey = answers.filter((answer) => answer.key.startsWith(`${key}:`));
@@ -213,12 +214,13 @@ const hook = defineHook({
       ...(isSkill ? skillChecks : {}),
       ...(DOCS.has(basename(path)) ? docChecks : {}),
     };
-    const failed = await yesKeysOf(
+    const jev = jevFor(input);
+    const failed = await jev.yesKeysOf(
       state,
       Object.fromEntries(Object.entries(checks).map(([key, check]) => [key, check.question])),
     );
     if (failed.length === 0) return context.success();
-    const lines = await linesOf(state, checks, failed);
+    const lines = await linesOf(jev, state, checks, failed);
     const items = failed.map((key) =>
       [`- ${checks[key]?.reason}`, ...(lines.get(key) ?? []).map((line) => `  - ${line}`)].join(
         "\n",
