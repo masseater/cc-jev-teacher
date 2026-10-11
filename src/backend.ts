@@ -3,7 +3,6 @@
 
 type JevSettings = {
   openRouterKey: string;
-  typeSafeKey: string;
   openRouterModel: string;
   allowTraining: boolean;
 };
@@ -39,17 +38,8 @@ export type JevBackend = {
 
 const DEFAULT_OPENROUTER_MODEL = "respan/span-01-lite";
 
-// OpenRouter is used whenever its key is set; otherwise requests go to TypeSafe directly.
+// Every request goes through OpenRouter.
 export const jevBackend = (settings: JevSettings, origin: Origin): JevBackend => {
-  if (!settings.openRouterKey)
-    return {
-      apiKey: settings.typeSafeKey,
-      baseURL: "https://api.typesafe.ai",
-      model: "jev-latest",
-      extra: {},
-      headers: {},
-      textState: false,
-    };
   const model = settings.openRouterModel || DEFAULT_OPENROUTER_MODEL;
   return {
     apiKey: settings.openRouterKey,
@@ -98,7 +88,6 @@ export const systemOneRequest = (
 
 type BackendEnv = PlaceEnv & {
   OPENROUTER_API_KEY?: string | undefined;
-  TYPESAFE_API_KEY?: string | undefined;
   OPENROUTER_MODEL?: string | undefined;
   CC_JEV_TEACHER_ALLOW_TRAINING?: string | undefined;
 };
@@ -116,7 +105,6 @@ export const moduleBackend = (
   return jevBackend(
     {
       openRouterKey: option("openrouter_api_key") || env.OPENROUTER_API_KEY || "",
-      typeSafeKey: option("typesafe_api_key") || env.TYPESAFE_API_KEY || "",
       openRouterModel: option("openrouter_model") || env.OPENROUTER_MODEL || "",
       allowTraining: env.CC_JEV_TEACHER_ALLOW_TRAINING === "1",
     },

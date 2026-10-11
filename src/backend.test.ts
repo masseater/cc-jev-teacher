@@ -2,23 +2,12 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { jevBackend, moduleBackend, placeOf, stateFor, systemOneRequest } from "./backend.ts";
 
-const settings = { openRouterKey: "", typeSafeKey: "", openRouterModel: "", allowTraining: false };
+const settings = { openRouterKey: "", openRouterModel: "", allowTraining: false };
 const origin = { place: "cloud", project: "app", hook: "script-edit", sessionId: "s1" } as const;
 
 describe("jevBackend", () => {
-  it("sends to TypeSafe directly when only its key is set", () => {
-    expect(jevBackend({ ...settings, typeSafeKey: "ts" }, origin)).toEqual({
-      apiKey: "ts",
-      baseURL: "https://api.typesafe.ai",
-      model: "jev-latest",
-      extra: {},
-      headers: {},
-      textState: false,
-    });
-  });
-
-  it("prefers OpenRouter, defaulting to Respan Span-01 Lite with data collection denied", () => {
-    expect(jevBackend({ ...settings, openRouterKey: "or", typeSafeKey: "ts" }, origin)).toEqual({
+  it("sends to OpenRouter, defaulting to Respan Span-01 Lite with data collection denied", () => {
+    expect(jevBackend({ ...settings, openRouterKey: "or" }, origin)).toEqual({
       apiKey: "or",
       baseURL: "https://openrouter.ai/api",
       model: "respan/span-01-lite",
@@ -100,9 +89,10 @@ describe("moduleBackend", () => {
   });
 
   it("falls back to the environment", () => {
-    expect(moduleBackend({}, { TYPESAFE_API_KEY: "from-env" }, moduleOrigin).apiKey).toBe(
+    expect(moduleBackend({}, { OPENROUTER_API_KEY: "from-env" }, moduleOrigin).apiKey).toBe(
       "from-env",
     );
     expect(moduleBackend({}, {}, moduleOrigin).apiKey).toBe("");
+    expect(moduleBackend({ typesafe_api_key: "ts" }, {}, moduleOrigin).apiKey).toBe("");
   });
 });

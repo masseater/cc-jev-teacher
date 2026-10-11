@@ -1,5 +1,4 @@
 import {
-  ENV,
   type EntryType,
   type NoulQuestion,
   type Questions,
@@ -21,12 +20,11 @@ const hook = basename(process.argv[1] ?? "", ".ts");
 
 const settings = {
   openRouterKey: option("OPENROUTER_API_KEY") || process.env.OPENROUTER_API_KEY || "",
-  typeSafeKey: option("TYPESAFE_API_KEY") || process.env[ENV.apiKey] || "",
   openRouterModel: option("OPENROUTER_MODEL") || process.env.OPENROUTER_MODEL || "",
   allowTraining: process.env.CC_JEV_TEACHER_ALLOW_TRAINING === "1",
 };
 
-export const hasApiKey = () => settings.openRouterKey !== "" || settings.typeSafeKey !== "";
+export const hasApiKey = () => settings.openRouterKey !== "";
 
 const logRequest = (model: string, body: string) => {
   try {

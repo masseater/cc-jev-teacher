@@ -65,9 +65,9 @@ function jevFetch(answer: (name: string) => number, bodies: string[] = []) {
   };
 }
 
-const backend = (typeSafeKey: string) =>
+const backend = (openRouterKey: string) =>
   jevBackend(
-    { openRouterKey: "", typeSafeKey, openRouterModel: "", allowTraining: false },
+    { openRouterKey, openRouterModel: "", allowTraining: false },
     { place: "local", project: "p", hook: "compaction", sessionId: "" },
   );
 
@@ -146,7 +146,7 @@ describe("compactSession", () => {
       jevFetch((name) => (name === "call_t2" || name === "result_t2" ? 0.9 : 0.1), bodies),
     );
     expect(bodies).toHaveLength(1);
-    expect(JSON.parse(bodies[0]!).model).toBe("jev-latest");
+    expect(JSON.parse(bodies[0]!).model).toBe("respan/span-01-lite");
     expect(output.decisions.map((d) => d.action)).toEqual(["drop_call", "keep"]);
     expect(messages.map((m) => m.handle)).toEqual(["h-0", "h-tool-2", "r-tool-2", "h-5", "h-6"]);
     expect(summarize(output)).toMatch(

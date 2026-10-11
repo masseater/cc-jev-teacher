@@ -167,7 +167,7 @@ export async function compactSession(
   backend: JevBackend,
   fetchFn: HookFetch,
 ): Promise<SessionCompaction> {
-  if (!backend.apiKey) throw new Error("no OpenRouter or TypeSafe API key is configured");
+  if (!backend.apiKey) throw new Error("no OpenRouter API key is configured");
   const result = await compact(messages, jevAsker(fetchFn, backend), config);
   return { result, messages: toSessionMessages(messages, result.messages) };
 }
@@ -233,7 +233,6 @@ async function backendOf(
 ): Promise<JevBackend> {
   const env = {
     OPENROUTER_API_KEY: await $.env.get("OPENROUTER_API_KEY"),
-    TYPESAFE_API_KEY: await $.env.get("TYPESAFE_API_KEY"),
     OPENROUTER_MODEL: await $.env.get("OPENROUTER_MODEL"),
     CC_JEV_TEACHER_ALLOW_TRAINING: await $.env.get("CC_JEV_TEACHER_ALLOW_TRAINING"),
     GITHUB_ACTIONS: await $.env.get("GITHUB_ACTIONS"),
