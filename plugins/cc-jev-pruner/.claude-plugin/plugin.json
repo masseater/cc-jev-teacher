@@ -1,28 +1,18 @@
 {
-  "name": "cc-jev-teacher",
-  "description": "Claude Code hooks that make Claude finish the job: a decision model on OpenRouter judges each tool call and final report, and sends Claude back to work on script edits, unrequested config relaxation, building before searching, and unfinished, verbose or unmeasured reports. It also keeps context small by compacting without a summary and trimming long Bash output, and finds the code behind a behavior with Jevgrep",
+  "name": "cc-jev-pruner",
+  "description": "Keeps Claude Code's context small with a decision model on OpenRouter: compacts without a summary by dropping tool calls the task no longer needs, trims long Bash output to the parts that matter, and finds the code behind a behavior with Jevgrep",
   "author": {
     "name": "masseater",
     "url": "https://github.com/masseater"
   },
   "repository": "https://github.com/masseater/cc-jev-teacher",
   "license": "MIT",
-  "keywords": [
-    "hooks",
-    "stop-hook",
-    "guardrails",
-    "typesafe",
-    "jev",
-    "openrouter",
-    "compaction",
-    "context",
-    "search"
-  ],
+  "keywords": ["hooks", "jev", "openrouter", "compaction", "context", "search"],
   "userConfig": {
     "openrouter_api_key": {
       "type": "string",
       "title": "OpenRouter API key",
-      "description": "API key for https://openrouter.ai. Every judgment goes through OpenRouter",
+      "description": "API key for https://openrouter.ai. Every compaction, output trim and search goes through OpenRouter",
       "sensitive": true,
       "required": false
     },

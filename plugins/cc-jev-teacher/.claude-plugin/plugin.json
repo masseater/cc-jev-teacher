@@ -1,0 +1,26 @@
+{
+  "name": "cc-jev-teacher",
+  "description": "Claude Code hooks that make Claude finish the job: a decision model on OpenRouter judges each tool call and final report, and sends Claude back to work on script edits, unrequested config relaxation, building before searching, and unfinished, verbose or unmeasured reports",
+  "author": {
+    "name": "masseater",
+    "url": "https://github.com/masseater"
+  },
+  "repository": "https://github.com/masseater/cc-jev-teacher",
+  "license": "MIT",
+  "keywords": ["hooks", "stop-hook", "guardrails", "jev", "openrouter"],
+  "userConfig": {
+    "openrouter_api_key": {
+      "type": "string",
+      "title": "OpenRouter API key",
+      "description": "API key for https://openrouter.ai. Every judgment goes through OpenRouter",
+      "sensitive": true,
+      "required": false
+    },
+    "openrouter_model": {
+      "type": "string",
+      "title": "OpenRouter model",
+      "description": "Decision model on OpenRouter, such as respan/span-01-lite (default, free), respan/span-01 or typesafe/jev-1.13",
+      "required": false
+    }
+  }
+}

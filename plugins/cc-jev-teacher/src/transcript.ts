@@ -1,6 +1,6 @@
 import { closeSync, fstatSync, openSync, readFileSync, readSync } from "node:fs";
 
-import type { Message } from "./compaction/index.ts";
+import type { Message } from "./compaction/types.ts";
 import * as v from "valibot";
 
 // A field that is dropped when it has an unexpected type, so one odd entry does not fail the hook.

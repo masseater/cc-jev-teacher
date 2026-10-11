@@ -1,6 +1,6 @@
 {
   "name": "cc-jev-teacher",
-  "description": "Claude Code plugin that makes Claude finish the job before it reports",
+  "description": "Claude Code plugins that make Claude finish the job and keep its context small",
   "owner": {
     "name": "masseater",
     "url": "https://github.com/masseater"
@@ -8,7 +8,12 @@
   "plugins": [
     {
       "name": "cc-jev-teacher",
-      "source": "./",
+      "source": "./plugins/cc-jev-teacher",
+      "category": "productivity"
+    },
+    {
+      "name": "cc-jev-pruner",
+      "source": "./plugins/cc-jev-pruner",
       "category": "productivity"
     }
   ]

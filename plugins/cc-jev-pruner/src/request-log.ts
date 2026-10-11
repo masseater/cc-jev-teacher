@@ -1,4 +1,4 @@
-import { estimateTokens } from "./bash-output/jev.ts";
+import { estimateTokens } from "./compaction/state.ts";
 
 export const REQUEST_LOG_DIR = ".claude/cc-jev-teacher";
 export const REQUEST_LOG = `${REQUEST_LOG_DIR}/requests.jsonl`;

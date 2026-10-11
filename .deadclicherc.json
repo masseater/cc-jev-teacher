@@ -1,4 +1,4 @@
 {
   "preset": "paper",
-  "ignore": ["skills/dead-cliche-writing/"]
+  "ignore": ["plugins/cc-jev-teacher/skills/dead-cliche-writing/"]
 }

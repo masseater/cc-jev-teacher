@@ -15,5 +15,5 @@
       "claude-code": ["./types/claude-code.d.ts"]
     }
   },
-  "include": ["src", "hooks", "types"]
+  "include": ["plugins/*/src", "plugins/*/hooks", "scripts", "types"]
 }
