@@ -54,16 +54,19 @@ When Claude Code compacts the conversation, or after a turn that leaves context 
 
 When a Bash command prints more than about 10,000 tokens, the model scores the output in chunks against the recent instructions, and only the chunks that matter reach Claude, followed by the path of the full output saved under `.claude/fast-jev-output/`. Output that looks like it holds credentials is passed through untouched and never sent.
 
-Every hook appends one line per run to `.claude/cc-jev-teacher/requests.jsonl` in the project, with the hook, the model, the number of requests, and an estimate of the tokens sent, so the cost of each hook can be measured. Each request also names this plugin as its app and `<place>:<project>:<hook>` as its user (`place` is `ci`, `cloud` for Claude Code on the web, or `local`), with the Claude Code session as its session, so OpenRouter's activity page splits the spend by where it ran.
+The plugin also brings [Jevgrep](https://github.com/dzhng/jevgrep) as an MCP server, `jevgrep`, so Claude can ask where a behavior lives instead of searching text. Its `search` tool takes a natural-language question and an optional root, walks the repository, lets the same decision model judge which folders, files, and declarations matter, and returns the relevant files with verbatim source excerpts and reading leads. Its `files` tool counts what a search under a root may read without sending anything. The `jevgrep` skill tells Claude when to use them. Answers are cached under `~/.cache/jevgrep`.
+
+Every hook, and every Jevgrep search, appends one line per run to `.claude/cc-jev-teacher/requests.jsonl` in the project, with the hook, the model, the number of requests, and an estimate of the tokens sent, so the cost of each hook can be measured. Each request also names this plugin as its app and `<place>:<project>:<hook>` as its user (`place` is `ci`, `cloud` for Claude Code on the web, or `local`), with the Claude Code session as its session, so OpenRouter's activity page splits the spend by where it ran.
 
 Both run as Claude Code hooks modules, so they need `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` in the environment or in the `env` of `settings.json`. They read the same keys as the other hooks, from the plugin options or the environment.
 
 ## Credits
 
 - Compaction (`src/compaction`) is [tamaratran/fast-jev-compaction](https://github.com/tamaratran/fast-jev-compaction) as of [`e3f262a`](https://github.com/tamaratran/fast-jev-compaction/tree/e3f262a7f4d42bd8dd32ced30d26176f7cb545b0), MIT. Its license is in [`src/compaction/LICENSE`](src/compaction/LICENSE).
+- Code search (`src/grep`, the `jevgrep` MCP server, and the `jevgrep` skill) is [dzhng/jevgrep](https://github.com/dzhng/jevgrep) as of [`703aba1`](https://github.com/dzhng/jevgrep/tree/703aba1a36a3b854be405244ea748f607cd630c0), MIT. Its license is in [`src/grep/LICENSE`](src/grep/LICENSE).
 - Bash output trimming (`src/bash-output`) is [tamaratran/jev-pruner](https://github.com/tamaratran/jev-pruner) as of [`edbc602`](https://github.com/tamaratran/jev-pruner/tree/edbc60262a5edc07e18d646c1a3f8a9f0ae868c5), MIT. Its license is in [`src/bash-output/LICENSE`](src/bash-output/LICENSE).
 
-This plugin sends their requests through its own OpenRouter backend, and the Bash output hook skips credential-like output instead of sending it unsaved.
+This plugin sends their requests through its own OpenRouter backend, Jevgrep's searches use the plugin's key instead of `jg auth`, and the Bash output hook skips credential-like output instead of sending it unsaved.
 
 The `dead-cliche-writing` skill comes from [BoxPistols/ux-writing-dead-cliche](https://github.com/BoxPistols/ux-writing-dead-cliche) (MIT) and runs its checker from the npm package `textlint-rule-ux-writing-dead-cliche`.
 
