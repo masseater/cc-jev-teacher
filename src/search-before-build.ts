@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { failedOf, hasApiKey } from "./jev-checks.ts";
+import { hasApiKey, jevFor } from "./jev-checks.ts";
 import { isScratch } from "./scratch-path.ts";
 import { entriesOf, instructionOf, toolCallsOf, toolUsesOf } from "./transcript.ts";
 
@@ -14,7 +14,7 @@ const hook = defineHook({
     const path = context.input.tool_input.file_path;
     if (existsSync(path) || isScratch(path)) return context.success();
     const entries = entriesOf(context.input.transcript_path);
-    const failed = await failedOf(
+    const failed = await jevFor(context.input).failedOf(
       { instruction: instructionOf(entries), tool_calls: toolCallsOf(toolUsesOf(entries)) },
       {
         build: {

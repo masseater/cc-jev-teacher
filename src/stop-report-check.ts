@@ -1,7 +1,7 @@
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { hasApiKey, systemOne, THRESHOLD } from "./jev-checks.ts";
+import { hasApiKey, jevFor, THRESHOLD } from "./jev-checks.ts";
 import { aiJapanese } from "./japanese.ts";
 import { entriesOf, instructionOf, stopFeedbackOf, toolCallsOf, toolUsesOf } from "./transcript.ts";
 
@@ -141,7 +141,7 @@ const hook = defineHook({
     const report = input.last_assistant_message?.trim();
     if (!report) return context.success();
     const entries = entriesOf(input.transcript_path);
-    const { answers } = await systemOne({
+    const { answers } = await jevFor(input).systemOne({
       state: {
         instruction: instructionOf(entries),
         report,

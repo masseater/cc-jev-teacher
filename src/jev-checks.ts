@@ -10,73 +10,90 @@ import {
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename } from "node:path";
 
-import { jevBackend, stateFor } from "./backend.ts";
+import { jevBackend, placeOf, stateFor } from "./backend.ts";
 import { count, REQUEST_LOG, REQUEST_LOG_DIR, requestLine, tally } from "./request-log.ts";
 
 export const THRESHOLD = 0.7;
 
 const option = (name: string) => process.env[`CLAUDE_PLUGIN_OPTION_${name}`] || "";
 
-const backend = jevBackend({
+const hook = basename(process.argv[1] ?? "", ".ts");
+
+const settings = {
   openRouterKey: option("OPENROUTER_API_KEY") || process.env.OPENROUTER_API_KEY || "",
   typeSafeKey: option("TYPESAFE_API_KEY") || process.env[ENV.apiKey] || "",
   openRouterModel: option("OPENROUTER_MODEL") || process.env.OPENROUTER_MODEL || "",
   allowTraining: process.env.CC_JEV_TEACHER_ALLOW_TRAINING === "1",
-});
+};
 
-export const hasApiKey = () => backend.apiKey !== "";
+export const hasApiKey = () => settings.openRouterKey !== "" || settings.typeSafeKey !== "";
 
-const logRequest = (body: string) => {
+const logRequest = (model: string, body: string) => {
   try {
     const sent = tally();
     count(sent, body);
     mkdirSync(REQUEST_LOG_DIR, { recursive: true });
     const ignore = `${REQUEST_LOG_DIR}/.gitignore`;
     if (!existsSync(ignore)) writeFileSync(ignore, "*\n");
-    appendFileSync(
-      REQUEST_LOG,
-      requestLine(basename(process.argv[1] ?? "", ".ts"), backend.model, sent),
-    );
+    appendFileSync(REQUEST_LOG, requestLine(hook, model, sent));
   } catch {
     return;
   }
 };
 
-// Sends one System One request to the configured backend.
-export const systemOne = <const Q extends Questions>(request: SystemOneRequest<Q>) => {
-  const { apiKey, baseURL, model, extra } = backend;
-  const body: SystemOneRequest<Q> = {
-    ...extra,
-    ...request,
-    state: stateFor(backend, request.state),
-  };
-  logRequest(JSON.stringify(body));
-  return new TypeSafeClient({
-    apiKey,
-    baseURL,
-    defaultModel: model,
-    timeout: 50000,
-    retry: { maxRetries: 1 },
-  }).systemOne(body);
-};
-
 export type Checks = Record<string, { question: NoulQuestion; reason: string; wholeFile?: true }>;
 
-// Asks Jev every question in one request and returns the probability of yes for each key.
-export const noulsOf = async (state: EntryType, questions: Record<string, NoulQuestion>) => {
-  const { answers } = await systemOne({ state, questions });
-  return Object.keys(questions).map((key) => ({ key, noul: answers[key]?.noul ?? 0 }));
+// The System One calls of one hook run, sent on behalf of the session in its input.
+export const jevFor = (input: { session_id: string }) => {
+  const backend = jevBackend(settings, {
+    place: placeOf({
+      GITHUB_ACTIONS: process.env.GITHUB_ACTIONS,
+      CLAUDE_CODE_REMOTE: process.env.CLAUDE_CODE_REMOTE,
+    }),
+    project: basename(process.env.CLAUDE_PROJECT_DIR || process.cwd()),
+    hook,
+    sessionId: input.session_id,
+  });
+
+  // Sends one System One request to the configured backend.
+  const systemOne = <const Q extends Questions>(request: SystemOneRequest<Q>) => {
+    const { apiKey, baseURL, model, extra, headers } = backend;
+    const body: SystemOneRequest<Q> = {
+      ...extra,
+      ...request,
+      state: stateFor(backend, request.state),
+    };
+    logRequest(model, JSON.stringify(body));
+    return new TypeSafeClient({
+      apiKey,
+      baseURL,
+      defaultModel: model,
+      defaultHeaders: headers,
+      timeout: 50000,
+      retry: { maxRetries: 1 },
+    }).systemOne(body);
+  };
+
+  // Asks Jev every question in one request and returns the probability of yes for each key.
+  const noulsOf = async (state: EntryType, questions: Record<string, NoulQuestion>) => {
+    const { answers } = await systemOne({ state, questions });
+    return Object.keys(questions).map((key) => ({ key, noul: answers[key]?.noul ?? 0 }));
+  };
+
+  // Asks Jev every question in one request and returns the keys answered yes.
+  const yesKeysOf = async (state: EntryType, questions: Record<string, NoulQuestion>) =>
+    (await noulsOf(state, questions)).filter(({ noul }) => noul >= THRESHOLD).map(({ key }) => key);
+
+  // Asks Jev every check in one request and returns the reasons of the checks that fail, as list items.
+  const failedOf = async (state: EntryType, checks: Checks) => {
+    const failed = await yesKeysOf(
+      state,
+      Object.fromEntries(Object.entries(checks).map(([key, check]) => [key, check.question])),
+    );
+    return failed.map((key) => `- ${checks[key]?.reason}`);
+  };
+
+  return { systemOne, noulsOf, yesKeysOf, failedOf };
 };
 
-// Asks Jev every question in one request and returns the keys answered yes.
-export const yesKeysOf = async (state: EntryType, questions: Record<string, NoulQuestion>) =>
-  (await noulsOf(state, questions)).filter(({ noul }) => noul >= THRESHOLD).map(({ key }) => key);
-
-// Asks Jev every check in one request and returns the reasons of the checks that fail, as list items.
-export const failedOf = async (state: EntryType, checks: Checks) => {
-  const failed = await yesKeysOf(
-    state,
-    Object.fromEntries(Object.entries(checks).map(([key, check]) => [key, check.question])),
-  );
-  return failed.map((key) => `- ${checks[key]?.reason}`);
-};
+export type Jev = ReturnType<typeof jevFor>;

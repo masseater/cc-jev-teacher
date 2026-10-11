@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { hasApiKey, systemOne, THRESHOLD } from "./jev-checks.ts";
+import { hasApiKey, jevFor, THRESHOLD } from "./jev-checks.ts";
 import { isScratch } from "./scratch-path.ts";
 import { entriesOf, instructionOf } from "./transcript.ts";
 
@@ -29,7 +29,7 @@ const hook = defineHook({
       after = input.tool_input.new_string;
     }
     if (before === after) return context.success();
-    const { answers } = await systemOne({
+    const { answers } = await jevFor(input).systemOne({
       state: {
         instruction: instructionOf(entriesOf(input.transcript_path)),
         file: path,

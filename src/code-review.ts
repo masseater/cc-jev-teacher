@@ -4,7 +4,7 @@ import { dirname, join, relative } from "node:path";
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { failedOf, hasApiKey } from "./jev-checks.ts";
+import { hasApiKey, jevFor } from "./jev-checks.ts";
 import { isScratch } from "./scratch-path.ts";
 import { repositoryOf } from "./repository.ts";
 
@@ -30,7 +30,7 @@ const hook = defineHook({
         .map((other) => `# ${other}\n${readFileSync(join(repository.root, other), "utf8")}`)
         .join("\n\n")
         .slice(0, limit);
-    const failed = await failedOf(
+    const failed = await jevFor(context.input).failedOf(
       {
         file,
         code: readFileSync(path, "utf8").slice(0, LIMIT),

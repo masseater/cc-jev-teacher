@@ -47,12 +47,15 @@ describe("jevAsker", () => {
           text: JSON.stringify({ answers: { c1: { type: "noul", noul: 0.9 } } }),
         };
       },
-      jevBackend({
-        openRouterKey: "key",
-        typeSafeKey: "",
-        openRouterModel: "typesafe/jev-1.13",
-        allowTraining: false,
-      }),
+      jevBackend(
+        {
+          openRouterKey: "key",
+          typeSafeKey: "",
+          openRouterModel: "typesafe/jev-1.13",
+          allowTraining: false,
+        },
+        { place: "local", project: "p", hook: "bash-output", sessionId: "" },
+      ),
     );
     const state = { task: "t", history: [], command: "ls", diagnosticsAndResults: [], chunks: [] };
     await asker.ask(state, {

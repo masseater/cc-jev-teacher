@@ -43,7 +43,7 @@ function harness(options: Partial<HookConfig> = {}) {
   const read = vi.fn(async (_path: string) => "");
   const write = vi.fn(async (_path: string, _content: string) => {});
   const host = {
-    session: { messages: readMessages },
+    session: { messages: readMessages, id: async () => "s", root: async () => "/p" },
     http: { fetch },
     env: { get: async () => undefined },
     fs: { exists: async () => false, read, write },

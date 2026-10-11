@@ -4,7 +4,7 @@ import { join, relative } from "node:path";
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
 
-import { failedOf, hasApiKey } from "./jev-checks.ts";
+import { hasApiKey, jevFor } from "./jev-checks.ts";
 import { isScratch } from "./scratch-path.ts";
 import { repositoryOf } from "./repository.ts";
 
@@ -20,7 +20,7 @@ const hook = defineHook({
     const repository = repositoryOf(path);
     if (!SCRIPT_FILE.test(path) || !existsSync(path) || isScratch(path) || !repository)
       return context.success();
-    const failed = await failedOf(
+    const failed = await jevFor(context.input).failedOf(
       {
         files: repository.files
           .filter((file) => SCRIPT_FILE.test(file) && !file.includes("node_modules/"))

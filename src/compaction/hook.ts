@@ -225,7 +225,10 @@ export function decisionLogLines(
 }
 
 async function backendOf(
-  $: { env: { get: (name: string) => Promise<string | undefined> } },
+  $: {
+    env: { get: (name: string) => Promise<string | undefined> };
+    session: { id: () => Promise<string>; root: () => Promise<string> };
+  },
   options: PluginOptions,
 ): Promise<JevBackend> {
   const env = {
@@ -233,8 +236,14 @@ async function backendOf(
     TYPESAFE_API_KEY: await $.env.get("TYPESAFE_API_KEY"),
     OPENROUTER_MODEL: await $.env.get("OPENROUTER_MODEL"),
     CC_JEV_TEACHER_ALLOW_TRAINING: await $.env.get("CC_JEV_TEACHER_ALLOW_TRAINING"),
+    GITHUB_ACTIONS: await $.env.get("GITHUB_ACTIONS"),
+    CLAUDE_CODE_REMOTE: await $.env.get("CLAUDE_CODE_REMOTE"),
   };
-  return moduleBackend(options, env);
+  return moduleBackend(options, env, {
+    project: (await $.session.root()).split("/").filter(Boolean).at(-1) ?? "",
+    hook: "compaction",
+    sessionId: await $.session.id(),
+  });
 }
 
 function notify(
