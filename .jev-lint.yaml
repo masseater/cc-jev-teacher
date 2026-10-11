@@ -154,12 +154,12 @@ rules:
 
 # The model, and the endpoint it is asked at. Point `baseUrl` at a proxy or a
 # self-hosted deployment to move the whole tool off the default service.
-# model: jev-latest
-# baseUrl: https://api.typesafe.ai
+model: typesafe/jev-1.13
+baseUrl: https://openrouter.ai/api
 
 # Which environment variable holds the API key. The key itself must NEVER go in
 # this file -- it belongs in version control and a secret does not.
-# apiKeyEnv: TYPESAFE_API_KEY
+apiKeyEnv: OPENROUTER_API_KEY
 
 # One state per file (accurate, the default) or one per rule (fewer requests,
 # and a cutoff that has to be refitted). `auto` costs both and picks.

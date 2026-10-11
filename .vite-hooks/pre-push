@@ -1,5 +1,5 @@
 # jev-lint blocks only on a rule with `severity: error`; exit 3 (requests failed) does not block.
-if [ -z "$TYPESAFE_API_KEY" ] && [ -z "$TYPESAFEAI_API_KEY" ]; then
+if [ -z "$OPENROUTER_API_KEY" ]; then
   echo "jev-lint: no API key in the environment, skipping the review" >&2
   exit 0
 fi

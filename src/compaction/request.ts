@@ -1,40 +1,5 @@
 import type { JevAnswer, JevQuestions, JevResponse, JevState } from "./types.js";
 
-export const SYSTEM_ONE_URL = "https://api.typesafe.ai/v1/systemone";
-export const DEFAULT_MODEL = "jev-latest";
-
-export interface JevRequest {
-  url: string;
-  method: "POST";
-  headers: Record<string, string>;
-  body: string;
-}
-
-/** The HTTP request for one Jev call, for any fetch-like transport. */
-export function buildJevRequest(
-  params: {
-    apiKey: string;
-    model?: string;
-    baseUrl?: string;
-  },
-  state: JevState,
-  questions: JevQuestions,
-): JevRequest {
-  return {
-    url: params.baseUrl ?? SYSTEM_ONE_URL,
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${params.apiKey}`,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model: params.model ?? DEFAULT_MODEL,
-      state,
-      questions,
-    }),
-  };
-}
-
 /** Validates a Jev response body; throws on anything but an `answers` object. */
 export function parseJevResponse(status: number, ok: boolean, text: string): JevResponse {
   if (!ok) {

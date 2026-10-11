@@ -15,7 +15,11 @@ const bashResult = (answer: { result?: unknown }) =>
 
 function harness(options: Partial<HookConfig> = {}) {
   const on = vi.fn();
-  register(on, { typesafe_api_key: "mock-key", ...options });
+  register(on, {
+    openrouter_api_key: "mock-key",
+    openrouter_model: "typesafe/jev-1.13",
+    ...options,
+  });
   expect(on).toHaveBeenCalledWith("tool.call", { tool: "Bash" }, expect.any(Function));
   const hook = on.mock.calls[0]![2] as BashHook;
   const messages: ConversationMessage[] = [

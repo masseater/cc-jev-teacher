@@ -50,7 +50,6 @@ describe("jevAsker", () => {
       jevBackend(
         {
           openRouterKey: "key",
-          typeSafeKey: "",
           openRouterModel: "typesafe/jev-1.13",
           allowTraining: false,
         },

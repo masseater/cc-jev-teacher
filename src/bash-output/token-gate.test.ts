@@ -54,7 +54,7 @@ describe("output token gate", () => {
   it("skips history, archives and HTTP for small stdout even with large stderr", async () => {
     type BashHook = MatchedHook<"tool.call", { tool: "Bash" }>;
     const on = vi.fn();
-    register(on, { typesafe_api_key: "mock-key" });
+    register(on, { openrouter_api_key: "mock-key" });
     const hook = on.mock.calls[0]![2] as BashHook;
     const messages = vi.fn();
     const fetch = vi.fn();
