@@ -66,7 +66,10 @@ function jevFetch(answer: (name: string) => number, bodies: string[] = []) {
 }
 
 const backend = (typeSafeKey: string) =>
-  jevBackend({ openRouterKey: "", typeSafeKey, openRouterModel: "", allowTraining: false });
+  jevBackend(
+    { openRouterKey: "", typeSafeKey, openRouterModel: "", allowTraining: false },
+    { place: "local", project: "p", hook: "compaction", sessionId: "" },
+  );
 
 describe("hook config", () => {
   it("reads userConfig values and falls back to defaults", () => {

@@ -68,7 +68,7 @@ describe("output token gate", () => {
     };
     const result = await hook(
       {
-        session: { messages },
+        session: { messages, id: async () => "s", root: async () => "/p" },
         http: { fetch },
         env: { get: async () => undefined },
         fs: { write },
