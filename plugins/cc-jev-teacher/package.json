@@ -1,0 +1,11 @@
+{
+  "name": "cc-jev-teacher",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@typesafe-ai/sdk": "0.6.0",
+    "cc-hooks-ts": "2.1.281",
+    "textlint-rule-ux-writing-dead-cliche": "^0.18.0",
+    "valibot": "1.5.0"
+  }
+}

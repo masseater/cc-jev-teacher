@@ -1,6 +1,7 @@
 import { noul } from "@typesafe-ai/sdk";
 import { defineHook, runHook } from "cc-hooks-ts";
-import { collectToolCalls, fitState, type Message } from "./compaction/index.ts";
+import { collectToolCalls, fitState } from "./compaction/state.ts";
+import type { Message } from "./compaction/types.ts";
 
 import { type Checks, hasApiKey, jevFor } from "./jev-checks.ts";
 import { entriesOf, messagesOf, stopFeedbackOf, toolUsesOf } from "./transcript.ts";
