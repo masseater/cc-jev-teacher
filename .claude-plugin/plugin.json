@@ -1,6 +1,6 @@
 {
   "name": "cc-jev-teacher",
-  "description": "Claude Code hooks that make Claude finish the job: a decision model on OpenRouter judges each tool call and final report, and sends Claude back to work on script edits, unrequested config relaxation, building before searching, and unfinished, verbose or unmeasured reports. It also keeps context small by compacting without a summary and trimming long Bash output",
+  "description": "Claude Code hooks that make Claude finish the job: a decision model on OpenRouter judges each tool call and final report, and sends Claude back to work on script edits, unrequested config relaxation, building before searching, and unfinished, verbose or unmeasured reports. It also keeps context small by compacting without a summary and trimming long Bash output, and finds the code behind a behavior with Jevgrep",
   "author": {
     "name": "masseater",
     "url": "https://github.com/masseater"
@@ -15,7 +15,8 @@
     "jev",
     "openrouter",
     "compaction",
-    "context"
+    "context",
+    "search"
   ],
   "userConfig": {
     "openrouter_api_key": {
@@ -30,6 +31,17 @@
       "title": "OpenRouter model",
       "description": "Decision model on OpenRouter, such as respan/span-01-lite (default, free), respan/span-01 or typesafe/jev-1.13",
       "required": false
+    }
+  },
+  "mcpServers": {
+    "jevgrep": {
+      "command": "bun",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/src/grep/server.ts"],
+      "env": {
+        "CLAUDE_PLUGIN_OPTION_OPENROUTER_API_KEY": "${user_config.openrouter_api_key}",
+        "CLAUDE_PLUGIN_OPTION_OPENROUTER_MODEL": "${user_config.openrouter_model}",
+        "CLAUDE_PROJECT_DIR": "${CLAUDE_PROJECT_DIR}"
+      }
     }
   }
 }

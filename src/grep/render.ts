@@ -1,0 +1,172 @@
+import type { Inventory, RetrievalResult } from "./index.ts";
+import { navigationByteBudget } from "./index.ts";
+
+function quote(value: string): string {
+  return JSON.stringify(value).replace(
+    /[\u007f-\u009f\u2028-\u202e\u2066-\u2069]/g,
+    (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
+  );
+}
+
+export const DEFAULT_MAX_SOURCE_BYTES = 0;
+export const DEFAULT_MAX_OUTPUT_BYTES = 256_000;
+
+/** Present source before detailed reading leads so truncated output remains useful. */
+export function renderResult(
+  result: RetrievalResult,
+  maxSourceBytes = DEFAULT_MAX_SOURCE_BYTES,
+  maxOutputBytes = DEFAULT_MAX_OUTPUT_BYTES,
+): string {
+  let remaining = maxSourceBytes || Infinity;
+  const files = [...result.files]
+    .sort(
+      (a, b) =>
+        (b.priority ?? b.score) - (a.priority ?? a.score) ||
+        b.score - a.score ||
+        a.path.localeCompare(b.path),
+    )
+    .map((file) => {
+      let omitted = file.sourceOmitted;
+      const excerpts = (file.presentationExcerpts ?? file.excerpts).filter(({ source }) => {
+        const bytes = Buffer.byteLength(source);
+        if (bytes > remaining) {
+          omitted = true;
+          return false;
+        }
+        remaining -= bytes;
+        return true;
+      });
+      return { file, excerpts, omitted };
+    });
+  const context = result.repositoryContext;
+  const omittedCount = files.filter(({ omitted }) => omitted).length;
+  const lines = [
+    `Jevgrep: ${files.length} relevant files${result.status !== "complete" ? "; discovery incomplete" : ""}.`,
+    ...(files.length === 0 && result.status === "complete"
+      ? ["No confident match found under this root."]
+      : []),
+    ...(result.issues.some(({ kind }) => kind === "low_confidence_budget")
+      ? [
+          `No confident match within the navigation budget (${navigationByteBudget} serialized bytes); narrow the root to continue.`,
+        ]
+      : []),
+    "Symbols use name@start-end. Roles are estimates; locations-only files remain reading leads.",
+    `AGENTS.md lookup (root and returned-file ancestors): ${context.instructionFiles.length ? context.instructionFiles.map(quote).join(", ") : "none found"}${context.instructionLookupIncomplete ? "; lookup incomplete" : ""}.`,
+    ...(result.status === "interrupted" ? ["Interrupted."] : []),
+    ...(omittedCount ? [`Source omitted: ${omittedCount} file(s).`] : []),
+    ...(result.warnings ?? []).map(({ kind, count }) => `Warning: ${quote(kind)}: ${count}`),
+    ...result.issues.map(({ kind, count }) => `Issue: ${quote(kind)}: ${count}`),
+    ...(result.providerFailure ? [`Provider error: ${quote(result.providerFailure)}`] : []),
+    ...files.flatMap(({ file, excerpts, omitted }) => [
+      `- ${quote(file.path)} — ${file.roles.join(", ") || "relevant; role uncertain"}; ${excerpts.length ? "source below" : omitted ? "source omitted" : "locations only"}`,
+    ]),
+    "End file list. Declaration locations follow source.",
+  ];
+  for (const { file, excerpts } of files)
+    for (const { range, source, partial, sourceByteStart, sourceByteEnd } of excerpts) {
+      const bytes =
+        sourceByteStart === undefined ? "" : `; UTF-8 bytes [${sourceByteStart}, ${sourceByteEnd})`;
+      const annotation =
+        partial || sourceByteStart !== undefined ? ` (partial excerpt${bytes})` : "";
+      const sourceLines = source.split("\n");
+      if (
+        (partial || sourceByteStart !== undefined) &&
+        sourceLines.length > range.endLine - range.startLine + 1 &&
+        sourceLines.at(-1) === ""
+      )
+        sourceLines.pop();
+      lines.push(
+        "",
+        `Source block ${quote(file.path)} lines ${range.startLine}-${range.endLine}${annotation}:`,
+      );
+      let fenceLength = 3;
+      for (const match of source.matchAll(/`+/g))
+        fenceLength = Math.max(fenceLength, match[0].length + 1);
+      const fence = "`".repeat(fenceLength);
+      lines.push(fence);
+      for (const line of sourceLines) lines.push(line);
+      lines.push(fence);
+    }
+  lines.push("", "Declaration locations:");
+  for (const { file, omitted } of files) {
+    lines.push(
+      `- ${quote(file.path)}`,
+      ...[...file.leads]
+        .sort((a, b) => a.range.startLine - b.range.startLine)
+        .map((lead) => `  ${lead.name}@${lead.range.startLine}-${lead.range.endLine}`),
+      ...(file.callLeads ?? []).map(
+        (call) =>
+          `  Possible local call ${call.caller} -> ${call.name}: lines ${call.range.startLine}-${call.range.endLine}${call.unknownEarlierBases.length ? `; earlier base(s) ${call.unknownEarlierBases.map(quote).join(", ")} not inspected` : ""}; runtime dispatch not verified.`,
+      ),
+      ...(omitted ? ["  Some source omitted; locations remain available."] : []),
+    );
+  }
+  const output = lines.join("\n") + "\n\nEnd context.\n";
+  const outputBytes = Buffer.byteLength(output);
+  if (!maxOutputBytes || outputBytes <= maxOutputBytes) return output;
+  const suffix = (omittedBytes: number) =>
+    `\nOutput truncated at the byte limit (${maxOutputBytes} bytes); ${omittedBytes} original bytes omitted.\n\nEnd context.\n`;
+  const suffixBytes = Buffer.byteLength(suffix(outputBytes));
+  let prefix = "";
+  let prefixBytes = 0;
+  let openFence = "";
+  for (const line of lines) {
+    const nextFence = openFence
+      ? line === openFence
+        ? ""
+        : openFence
+      : /^`{3,}$/.test(line)
+        ? line
+        : "";
+    const lineBytes = Buffer.byteLength(line) + 1;
+    const closingBytes = nextFence ? Buffer.byteLength(nextFence) + 1 : 0;
+    if (prefixBytes + lineBytes + closingBytes + suffixBytes > maxOutputBytes) break;
+    prefix += line + "\n";
+    prefixBytes += lineBytes;
+    openFence = nextFence;
+  }
+  return prefix + (openFence ? openFence + "\n" : "") + suffix(outputBytes - prefixBytes);
+}
+
+function size(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ["KiB", "MiB", "GiB"];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (unit < units.length - 1 && Math.round(value * 10) / 10 >= 1024) {
+    value /= 1024;
+    unit++;
+  }
+  return `${value.toFixed(1)} ${units[unit]}`;
+}
+
+/** Counts only; listing every eligible path would flood stdout on real repositories. */
+export function renderInventory(inventory: Inventory, maxDirectories = 20): string {
+  const count = (value: number) => value.toLocaleString("en-US");
+  const files = (value: number) => `${count(value)} ${value === 1 ? "file" : "files"}`;
+  const excluded = Object.entries(inventory.excluded).sort(
+    ([a, x], [b, y]) => y - x || a.localeCompare(b),
+  );
+  const lines = [
+    `Jevgrep files: ${files(inventory.files)} eligible (${size(inventory.bytes)})${inventory.status === "complete" ? "" : `; ${inventory.status === "interrupted" ? "interrupted" : "listing incomplete"}`}. No provider requests were made.`,
+    "A search reads only what it explores; content checks may further exclude binary, credential-like, or over-16 MiB files.",
+    ...(excluded.length
+      ? [
+          `Skipped paths (a skipped directory counts once): ${excluded.map(([reason, value]) => `${quote(reason)} ${count(value)}`).join("; ")}.`,
+        ]
+      : []),
+    ...inventory.issues.map(({ kind, count: value }) => `Issue: ${quote(kind)}: ${value}`),
+    ...inventory.directories
+      .slice(0, maxDirectories)
+      .map(
+        (directory) =>
+          `- ${quote(directory.path)} — ${files(directory.files)}, ${size(directory.bytes)}`,
+      ),
+    ...(inventory.directories.length > maxDirectories
+      ? [
+          `- ${count(inventory.directories.length - maxDirectories)} more ${inventory.directories.length - maxDirectories === 1 ? "directory" : "directories"}`,
+        ]
+      : []),
+  ];
+  return lines.join("\n") + "\n\nEnd files.\n";
+}
