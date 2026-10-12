@@ -19,7 +19,7 @@
 - シェルに渡す文字列のエスケープ: `shell-quote`
 - CLIの引数とサブコマンドの解析: `citty`
 - 外部HTTPのモック: `msw`
-- 外部APIやSaaSをEffectから呼ぶクライアント: 公開されているOpenAPIから `@effect/openapi-generator` の `openapigen` で生成する。AWSとCloudflareには生成済みの `@distilled.cloud/aws`、`@distilled.cloud/cloudflare` を使う
+- 外部APIやSaaSをEffectから呼ぶクライアント: `@distilled.cloud/<サービス名>` に生成済みのSDKがあればそれを使う。無ければ、公開されているOpenAPIから `@effect/openapi-generator` の `openapigen` で生成する
 - SQLの組み立てとマイグレーション: `drizzle-orm`
 - 認証、セッション、パスキー、APIキー: `better-auth`
 - TOTP: `otpauth`
