@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
+import type { JevAsker } from "../jev.ts";
 import { trimOutput } from "./output.js";
-import type { JevAsker } from "./jev.js";
 
 describe("partially represented chunks", () => {
   it.each([3_000, 1_000])(

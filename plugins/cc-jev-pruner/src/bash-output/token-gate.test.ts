@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vite-plus/test";
+import type { Questions } from "@typesafe-ai/sdk";
 import type { MatchedHook } from "claude-code";
 import { register, resolveHookConfig } from "./hook.ts";
 import { estimateTokens } from "./jev.js";
-import type { JevQuestions, JevState } from "./jev.js";
 import { trimOutput } from "./output.js";
 
 const outputWithTokens = (tokens: number) =>
@@ -20,8 +20,10 @@ describe("output token gate", () => {
   });
 
   it("scores output strictly above 10,000 tokens", async () => {
-    const ask = vi.fn(async (_state: JevState, questions: JevQuestions) => ({
-      answers: Object.fromEntries(Object.keys(questions).map((id) => [id, { noul: 0 }])),
+    const ask = vi.fn(async (_state: unknown, questions: Questions) => ({
+      answers: Object.fromEntries(
+        Object.keys(questions).map((id) => [id, { type: "noul" as const, noul: 0 }]),
+      ),
     }));
     const output = outputWithTokens(10_001);
     expect(estimateTokens(output)).toBe(10_001);

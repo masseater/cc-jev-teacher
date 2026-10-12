@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { JevAsker } from "./jev.js";
+import type { JevAsker } from "../jev.ts";
 import { trimOutput } from "./output.js";
 
 describe("diagnostic context across output chunks", () => {
@@ -25,7 +25,7 @@ describe("diagnostic context across output chunks", () => {
               .filter((chunk) => chunk.id in questions)
               .map((chunk) => [
                 chunk.id,
-                { noul: /ERROR|Exit status/.test(chunk.text) ? 0.99 : 0.01 },
+                { type: "noul" as const, noul: /ERROR|Exit status/.test(chunk.text) ? 0.99 : 0.01 },
               ]),
           ),
         };

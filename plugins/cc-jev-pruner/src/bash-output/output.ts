@@ -1,5 +1,7 @@
-import { estimateStateTokens, estimateTokens, noulAnswer } from "./jev.js";
-import type { JevAsker, JevQuestions } from "./jev.js";
+import type { Questions } from "@typesafe-ai/sdk";
+
+import { type JevAsker, noulAnswer } from "../jev.ts";
+import { estimateStateTokens, estimateTokens } from "./jev.js";
 import { splitHistory } from "./history.js";
 import type { ConversationMessage, HistoryEntry } from "./history.js";
 import { classifyInformation, isProtectedLine, keepScore } from "./retention.js";
@@ -226,7 +228,7 @@ export function stateFor(
   };
 }
 
-export function questionFor(chunk: OutputChunk): JevQuestions {
+export function questionFor(chunk: OutputChunk): Questions {
   return {
     [chunk.id]: {
       type: "noul",

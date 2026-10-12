@@ -1,3 +1,4 @@
+import type { Questions } from "@typesafe-ai/sdk";
 import { describe, expect, it } from "vite-plus/test";
 import {
   applyDecisions,
@@ -12,7 +13,6 @@ import {
   resolveOptions,
   type HistoryToolCall,
   type JevAsker,
-  type JevQuestions,
   type Message,
   type ToolCall,
 } from "./index.js";
@@ -51,7 +51,7 @@ type Seen = { state: unknown; questions: string[] };
 
 function fakeJev(answer: (name: string) => number, seen: Seen[] = []): JevAsker {
   return {
-    async ask(state, questions: JevQuestions) {
+    async ask(state, questions: Questions) {
       seen.push({ state, questions: Object.keys(questions) });
       return {
         answers: Object.fromEntries(
@@ -416,7 +416,7 @@ describe("compact", () => {
 
   it("rejects malformed answers", async () => {
     const broken: JevAsker = {
-      ask: async () => ({ answers: { call_t1: { noul: 0.5 } } }),
+      ask: async () => ({ answers: { call_t1: { type: "noul" as const, noul: 0.5 } } }),
     };
     await expect(compact(transcript(), broken, { preserveRecentMessages: 1 })).rejects.toThrow(
       /Invalid Jev answer/,

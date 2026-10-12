@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { JevAsker } from "./jev.js";
+import type { JevAsker } from "../jev.ts";
 import { estimateTokens } from "./jev.js";
 import { trimOutput } from "./output.js";
 
@@ -27,7 +27,10 @@ describe("compaction within native previews", () => {
             Object.keys(questions).map((id) => {
               const text = chunks.find((chunk) => chunk.id === id)!.text;
               if (id.startsWith("g")) refined.push(text);
-              return [id, { noul: /ERROR|Exit status/.test(text) ? 0.99 : 0.01 }];
+              return [
+                id,
+                { type: "noul" as const, noul: /ERROR|Exit status/.test(text) ? 0.99 : 0.01 },
+              ];
             }),
           ),
         };
@@ -57,7 +60,10 @@ describe("compaction within native previews", () => {
               refining && mode === "missing"
                 ? {}
                 : Object.fromEntries(
-                    Object.keys(questions).map((id) => [id, { noul: refining ? 0.11 : 0.99 }]),
+                    Object.keys(questions).map((id) => [
+                      id,
+                      { type: "noul" as const, noul: refining ? 0.11 : 0.99 },
+                    ]),
                   ),
           };
         },

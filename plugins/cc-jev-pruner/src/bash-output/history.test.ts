@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
+import type { JevAsker } from "../jev.ts";
 import { historyEntries, splitHistory } from "./history.js";
 import type { ConversationMessage, HistoryEntry } from "./history.js";
 import { estimateStateTokens } from "./jev.js";
-import type { JevAsker, JevState } from "./jev.js";
 import { trimOutput } from "./output.js";
 
 function message(
@@ -180,14 +180,16 @@ describe("history in output scoring", () => {
   );
 
   it("sends full tool results with the earlier instructions and current output", async () => {
-    const states: JevState[] = [];
+    const states: Parameters<JevAsker["ask"]>[0][] = [];
     await trimOutput(
       { command: "build", goal: "Build now.", output, messages: transcript() },
       {
         async ask(state, questions) {
           states.push(state);
           return {
-            answers: Object.fromEntries(Object.keys(questions).map((id) => [id, { noul: 0 }])),
+            answers: Object.fromEntries(
+              Object.keys(questions).map((id) => [id, { type: "noul" as const, noul: 0 }]),
+            ),
           };
         },
       },
@@ -232,7 +234,10 @@ describe("history in output scoring", () => {
           answers: Object.fromEntries(
             Object.keys(questions).map((id) => [
               id,
-              { noul: id === "c4" && history.includes("REQUIRED_BY_TOOL_RESULT") ? 0.9 : 0.1 },
+              {
+                type: "noul" as const,
+                noul: id === "c4" && history.includes("REQUIRED_BY_TOOL_RESULT") ? 0.9 : 0.1,
+              },
             ]),
           ),
         };
@@ -266,7 +271,9 @@ describe("history in output scoring", () => {
         calls++;
         if (calls === 2) return { answers: {} };
         return {
-          answers: Object.fromEntries(Object.keys(questions).map((id) => [id, { noul: 0 }])),
+          answers: Object.fromEntries(
+            Object.keys(questions).map((id) => [id, { type: "noul" as const, noul: 0 }]),
+          ),
         };
       },
     };
@@ -298,7 +305,9 @@ describe("history in output scoring", () => {
           }
           seen.push(state as (typeof seen)[number]);
           return {
-            answers: Object.fromEntries(Object.keys(questions).map((id) => [id, { noul: 0 }])),
+            answers: Object.fromEntries(
+              Object.keys(questions).map((id) => [id, { type: "noul" as const, noul: 0 }]),
+            ),
           };
         },
       },
