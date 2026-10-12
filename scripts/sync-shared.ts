@@ -9,6 +9,7 @@ const COPY = "plugins/cc-jev-teacher";
 const SHARED = [
   "src/backend.ts",
   "src/request-log.ts",
+  "src/tokens.ts",
   "src/compaction/LICENSE",
   "src/compaction/state.ts",
   "src/compaction/types.ts",

@@ -1,7 +1,8 @@
 import type { Questions } from "@typesafe-ai/sdk";
 
 import { type JevAsker, noulAnswer } from "../jev.ts";
-import { collectToolCalls, estimateTokens, fitState } from "./state.js";
+import { estimateTokens } from "../tokens.ts";
+import { collectToolCalls, fitState } from "./state.js";
 import type {
   CallAnswer,
   CallDecision,

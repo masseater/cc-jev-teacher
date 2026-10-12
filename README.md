@@ -120,7 +120,7 @@ The feedback messages are in Japanese and encode the author's working rules (for
 
 Each plugin directory has its own `package.json` and `bun.lock`, which Claude Code installs from. The root `package.json` holds the same dependencies plus the tooling, so `bun install` at the root is enough to run `vp run check`.
 
-The teacher keeps copies of the pruner's `src/backend.ts`, `src/request-log.ts`, `src/compaction/state.ts` and `src/compaction/types.ts`, because an installed plugin reads only its own directory. Edit the pruner's files and run `bun scripts/sync-shared.ts`; the check fails while a copy differs.
+The teacher keeps copies of the pruner files listed in `SHARED` in `scripts/sync-shared.ts`, because an installed plugin reads only its own directory. Edit the pruner's files and run `bun scripts/sync-shared.ts`; the check fails while a copy differs.
 
 ## License
 

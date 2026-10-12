@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import type { JevAsker } from "../jev.ts";
 import { historyEntries, splitHistory } from "./history.js";
 import type { ConversationMessage, HistoryEntry } from "./history.js";
-import { estimateStateTokens } from "./jev.js";
+import { estimateStateTokens } from "../tokens.ts";
 import { trimOutput } from "./output.js";
 
 function message(

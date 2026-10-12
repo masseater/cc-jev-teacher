@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import type { Questions } from "@typesafe-ai/sdk";
 import type { JevAsker } from "../jev.ts";
-import { estimateTokens } from "./jev.js";
+import { estimateTokens } from "../tokens.ts";
 import { trimOutput } from "./output.js";
 
 const progress = () =>

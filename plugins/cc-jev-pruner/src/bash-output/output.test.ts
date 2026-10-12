@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import type { JevAsker } from "../jev.ts";
 import { trimOutput } from "./output.js";
-import { estimateTokens } from "./jev.js";
+import { estimateTokens } from "../tokens.ts";
 
 function askerFor(score: (id: string) => number, calls: { count: number }): JevAsker {
   return {

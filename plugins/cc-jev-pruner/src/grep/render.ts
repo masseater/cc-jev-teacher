@@ -1,5 +1,6 @@
-import type { Inventory, RetrievalResult } from "./index.ts";
-import { navigationByteBudget } from "./index.ts";
+import type { Inventory } from "./inventory.ts";
+import { navigationByteBudget } from "./retrieve.ts";
+import type { RetrievalResult } from "./types.ts";
 
 function quote(value: string): string {
   return JSON.stringify(value).replace(

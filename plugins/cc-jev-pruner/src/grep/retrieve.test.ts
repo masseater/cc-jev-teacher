@@ -4,7 +4,8 @@ import { join } from "node:path";
 
 import { afterAll, describe, expect, it } from "vite-plus/test";
 
-import { inventory, retrieve } from "./index.ts";
+import { inventory } from "./inventory.ts";
+import { retrieve } from "./retrieve.ts";
 import { renderResult } from "./render.ts";
 import type { Evaluator } from "./types.ts";
 

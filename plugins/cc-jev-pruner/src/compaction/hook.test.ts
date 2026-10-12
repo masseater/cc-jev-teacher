@@ -9,7 +9,9 @@ import {
   toSessionMessages,
 } from "./hook.ts";
 import { jevBackend } from "../backend.ts";
-import { applyDecisions, collectToolCalls, decideCall, type Message } from "./index.js";
+import { applyDecisions, decideCall } from "./compact.ts";
+import { collectToolCalls } from "./state.ts";
+import type { Message } from "./types.ts";
 
 type SessionMessage = EngineMessage;
 

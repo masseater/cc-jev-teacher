@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import type { ConversationMessage, HistoryEntry } from "./history.js";
-import { estimateStateTokens } from "./jev.js";
+import { estimateStateTokens } from "../tokens.ts";
 import { trimOutput } from "./output.js";
 
 describe("scoring request ordering under a fixed allowance", () => {

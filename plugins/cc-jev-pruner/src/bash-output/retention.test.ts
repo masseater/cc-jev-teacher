@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import type { Questions } from "@typesafe-ai/sdk";
 import { classifyInformation } from "./retention.js";
 import { trimOutput } from "./output.js";
-import { estimateTokens } from "./jev.js";
+import { estimateTokens } from "../tokens.ts";
 
 const noise = Array.from(
   { length: 400 },

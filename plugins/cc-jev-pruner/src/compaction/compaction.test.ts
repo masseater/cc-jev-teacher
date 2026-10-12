@@ -1,21 +1,17 @@
 import type { Questions } from "@typesafe-ai/sdk";
 import { describe, expect, it } from "vite-plus/test";
+import { type JevAsker, parseJevResponse } from "../jev.ts";
+import { estimateTokens } from "../tokens.ts";
 import {
   applyDecisions,
   batchCalls,
-  collectToolCalls,
   compact,
   decideCall,
-  estimateTokens,
-  fitState,
-  parseJevResponse,
   reductionRatio,
   resolveOptions,
-  type HistoryToolCall,
-  type JevAsker,
-  type Message,
-  type ToolCall,
-} from "./index.js";
+} from "./compact.ts";
+import { collectToolCalls, fitState } from "./state.ts";
+import type { HistoryToolCall, Message, ToolCall } from "./types.ts";
 
 function message(role: Message["role"], text: string, extra: Partial<Message> = {}): Message {
   return { role, text, toolUses: [], ...extra };
