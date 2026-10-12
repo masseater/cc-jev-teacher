@@ -1,7 +1,7 @@
 import type { Questions } from "@typesafe-ai/sdk";
 
 import { type JevAsker, noulAnswer } from "../jev.ts";
-import { estimateStateTokens, estimateTokens } from "./jev.js";
+import { estimateStateTokens, estimateTokens } from "../tokens.ts";
 import { splitHistory } from "./history.js";
 import type { ConversationMessage, HistoryEntry } from "./history.js";
 import { classifyInformation, isProtectedLine, keepScore } from "./retention.js";

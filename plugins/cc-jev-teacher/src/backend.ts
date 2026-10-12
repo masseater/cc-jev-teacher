@@ -86,7 +86,7 @@ export const systemOneRequest = (
   }),
 });
 
-type BackendEnv = PlaceEnv & {
+export type BackendEnv = PlaceEnv & {
   OPENROUTER_API_KEY?: string | undefined;
   OPENROUTER_MODEL?: string | undefined;
   CC_JEV_TEACHER_ALLOW_TRAINING?: string | undefined;
@@ -111,3 +111,17 @@ export const moduleBackend = (
     { ...origin, place: placeOf(env) },
   );
 };
+
+// The backend of a process the plugin starts, which receives the plugin's options as CLAUDE_PLUGIN_OPTION_* variables.
+export const processBackend = (
+  env: Readonly<Record<string, string | undefined>>,
+  origin: Omit<Origin, "place">,
+): JevBackend =>
+  moduleBackend(
+    {
+      openrouter_api_key: env.CLAUDE_PLUGIN_OPTION_OPENROUTER_API_KEY,
+      openrouter_model: env.CLAUDE_PLUGIN_OPTION_OPENROUTER_MODEL,
+    },
+    env,
+    origin,
+  );

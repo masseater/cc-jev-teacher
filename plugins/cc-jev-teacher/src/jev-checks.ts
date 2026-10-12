@@ -9,30 +9,32 @@ import {
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename } from "node:path";
 
-import { jevBackend, placeOf, stateFor } from "./backend.ts";
-import { count, REQUEST_LOG, REQUEST_LOG_DIR, requestLine, tally } from "./request-log.ts";
+import { processBackend, stateFor } from "./backend.ts";
+import {
+  count,
+  REQUEST_LOG,
+  REQUEST_LOG_DIR,
+  REQUEST_LOG_IGNORE,
+  requestLine,
+  tally,
+} from "./request-log.ts";
 
 export const THRESHOLD = 0.7;
 
-const option = (name: string) => process.env[`CLAUDE_PLUGIN_OPTION_${name}`] || "";
-
 const hook = basename(process.argv[1] ?? "", ".ts");
 
-const settings = {
-  openRouterKey: option("OPENROUTER_API_KEY") || process.env.OPENROUTER_API_KEY || "",
-  openRouterModel: option("OPENROUTER_MODEL") || process.env.OPENROUTER_MODEL || "",
-  allowTraining: process.env.CC_JEV_TEACHER_ALLOW_TRAINING === "1",
-};
+const project = basename(process.env.CLAUDE_PROJECT_DIR || process.cwd());
 
-export const hasApiKey = () => settings.openRouterKey !== "";
+const backendFor = (sessionId: string) => processBackend(process.env, { project, hook, sessionId });
+
+export const hasApiKey = () => backendFor("").apiKey !== "";
 
 const logRequest = (model: string, body: string) => {
   try {
     const sent = tally();
     count(sent, body);
     mkdirSync(REQUEST_LOG_DIR, { recursive: true });
-    const ignore = `${REQUEST_LOG_DIR}/.gitignore`;
-    if (!existsSync(ignore)) writeFileSync(ignore, "*\n");
+    if (!existsSync(REQUEST_LOG_IGNORE)) writeFileSync(REQUEST_LOG_IGNORE, "*\n");
     appendFileSync(REQUEST_LOG, requestLine(hook, model, sent));
   } catch {
     return;
@@ -43,15 +45,7 @@ export type Checks = Record<string, { question: NoulQuestion; reason: string; wh
 
 // The System One calls of one hook run, sent on behalf of the session in its input.
 export const jevFor = (input: { session_id: string }) => {
-  const backend = jevBackend(settings, {
-    place: placeOf({
-      GITHUB_ACTIONS: process.env.GITHUB_ACTIONS,
-      CLAUDE_CODE_REMOTE: process.env.CLAUDE_CODE_REMOTE,
-    }),
-    project: basename(process.env.CLAUDE_PROJECT_DIR || process.cwd()),
-    hook,
-    sessionId: input.session_id,
-  });
+  const backend = backendFor(input.session_id);
 
   // Sends one System One request to the configured backend.
   const systemOne = <const Q extends Questions>(request: SystemOneRequest<Q>) => {

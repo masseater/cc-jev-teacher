@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import type { JevAsker } from "../jev.ts";
-import { estimateTokens } from "./jev.js";
+import { estimateTokens } from "../tokens.ts";
 import { trimOutput } from "./output.js";
 
 const lines = Array.from(

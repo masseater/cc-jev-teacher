@@ -9,9 +9,12 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-import { moduleBackend } from "../backend.ts";
+import { processBackend } from "../backend.ts";
 import { count, REQUEST_LOG, REQUEST_LOG_IGNORE, requestLine, tally } from "../request-log.ts";
-import { createEvaluationCache, createEvaluator, inventory, retrieve } from "./index.ts";
+import { createEvaluationCache } from "./cache.ts";
+import { createEvaluator } from "./evaluator.ts";
+import { inventory } from "./inventory.ts";
+import { retrieve } from "./retrieve.ts";
 import { renderInventory, renderResult } from "./render.ts";
 import { storageDirectory } from "./storage.ts";
 import type { SearchInput } from "./types.ts";
@@ -21,20 +24,7 @@ const HOOK = "jevgrep";
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
 const backend = () =>
-  moduleBackend(
-    {
-      openrouter_api_key: process.env.CLAUDE_PLUGIN_OPTION_OPENROUTER_API_KEY,
-      openrouter_model: process.env.CLAUDE_PLUGIN_OPTION_OPENROUTER_MODEL,
-    },
-    {
-      OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
-      OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
-      CC_JEV_TEACHER_ALLOW_TRAINING: process.env.CC_JEV_TEACHER_ALLOW_TRAINING,
-      GITHUB_ACTIONS: process.env.GITHUB_ACTIONS,
-      CLAUDE_CODE_REMOTE: process.env.CLAUDE_CODE_REMOTE,
-    },
-    { project: basename(projectDir), hook: HOOK, sessionId: "" },
-  );
+  processBackend(process.env, { project: basename(projectDir), hook: HOOK, sessionId: "" });
 
 const policyShape = {
   exclude: z

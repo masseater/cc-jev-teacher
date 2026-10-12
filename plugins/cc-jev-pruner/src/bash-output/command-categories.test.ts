@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import type { Questions } from "@typesafe-ai/sdk";
 import { classifyOutput, trimOutput } from "./output.js";
-import { estimateStateTokens, estimateTokens } from "./jev.js";
+import { estimateStateTokens, estimateTokens } from "../tokens.ts";
 
 const noise = Array.from({ length: 200 }, (_, i) => `${i}: ${"cached unchanged ".repeat(30)}`).join(
   "\n",

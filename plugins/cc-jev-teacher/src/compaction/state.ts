@@ -7,6 +7,7 @@ import type {
   ToolCall,
   ToolResult,
 } from "./types.js";
+import { estimateTokens } from "../tokens.ts";
 
 export const STATE_CONTEXT =
   "A coding assistant conversation is being compacted to free context. `history` is the whole conversation so far, oldest first; tool outputs are replaced by a short `result` note and long texts may be abridged. Each question asks whether one tool call, or the full output of that call, still needs to stay in the history verbatim. Whatever is not kept is deleted permanently, but the assistant can always re-run a tool or re-read a file.";
@@ -15,27 +16,6 @@ export const STATE_CONTEXT =
 const INPUT_CHARS = [1000, 200, 60] as const;
 const TEXT_HEAD = 400;
 const TEXT_TAIL = 150;
-
-const TOKEN_PIECES = /[A-Za-z]+|\d+|[^\sA-Za-z\d]/g;
-
-/**
- * Estimates tokens without a tokenizer: a word costs one token per six
- * letters, a digit half a token, any other symbol nine tenths. Calibrated
- * against the usage Jev reports for real transcripts, where it lands 2–18%
- * above the true count; a plain characters-per-token ratio undercounts the
- * JSON-heavy states by up to 40%.
- */
-export function estimateTokens(text: string): number {
-  let tokens = 0;
-  for (const [piece] of text.matchAll(TOKEN_PIECES)) {
-    const first = piece.charCodeAt(0);
-    if (first >= 48 && first <= 57) tokens += piece.length / 2;
-    else if ((first >= 65 && first <= 90) || (first >= 97 && first <= 122)) {
-      tokens += 1 + Math.floor((piece.length - 1) / 6);
-    } else tokens += 0.9;
-  }
-  return Math.ceil(tokens);
-}
 
 export function truncate(text: string, limit: number): string {
   return text.length <= limit ? text : `${text.slice(0, Math.max(0, limit - 1))}…`;

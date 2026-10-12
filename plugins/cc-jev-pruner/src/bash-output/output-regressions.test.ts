@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import type { Questions } from "@typesafe-ai/sdk";
 import type { JevAsker } from "../jev.ts";
 import { trimOutput } from "./output.js";
-import { estimateStateTokens, estimateTokens } from "./jev.js";
+import { estimateStateTokens, estimateTokens } from "../tokens.ts";
 
 function answersFor(questions: Questions, score: (id: string) => number) {
   return {

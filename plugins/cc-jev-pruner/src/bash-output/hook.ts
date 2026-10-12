@@ -1,8 +1,8 @@
 import type { On, PluginOptions, Register, SessionMessage } from "claude-code";
 
-import { type JevBackend, moduleBackend, systemOneRequest } from "../backend.ts";
+import { type BackendEnv, type JevBackend, moduleBackend, systemOneRequest } from "../backend.ts";
 import { type JevAsker, parseJevResponse } from "../jev.ts";
-import { estimateTokens } from "./jev.js";
+import { estimateTokens } from "../tokens.ts";
 import {
   classifyOutput,
   exceedsOutputThreshold,
@@ -25,6 +25,8 @@ import { classifyInformation } from "./retention.js";
 import type { InformationCategory } from "./retention.js";
 
 export { looksSecret } from "./secrets.js";
+
+const HOOK = "bash-output";
 
 const ARCHIVE_DIR = ".claude/fast-jev-output";
 const DEFAULT_MAX_SCORING_REQUESTS = 11;
@@ -125,7 +127,7 @@ async function backendOf(
   },
   options: PluginOptions,
 ): Promise<JevBackend> {
-  const env = {
+  const env: BackendEnv = {
     OPENROUTER_API_KEY: await $.env.get("OPENROUTER_API_KEY"),
     OPENROUTER_MODEL: await $.env.get("OPENROUTER_MODEL"),
     CC_JEV_TEACHER_ALLOW_TRAINING: await $.env.get("CC_JEV_TEACHER_ALLOW_TRAINING"),
@@ -134,7 +136,7 @@ async function backendOf(
   };
   return moduleBackend(options, env, {
     project: (await $.session.root()).split("/").filter(Boolean).at(-1) ?? "",
-    hook: "bash-output",
+    hook: HOOK,
     sessionId: await $.session.id(),
   });
 }
@@ -273,10 +275,7 @@ export const register: Register = (on: On, options: PluginOptions) => {
         try {
           if (!(await $.fs.exists(REQUEST_LOG_IGNORE))) await $.fs.write(REQUEST_LOG_IGNORE, "*\n");
           const previous = (await $.fs.exists(REQUEST_LOG)) ? await $.fs.read(REQUEST_LOG) : "";
-          await $.fs.write(
-            REQUEST_LOG,
-            appendedLog(previous, requestLine("bash-output", model, sent)),
-          );
+          await $.fs.write(REQUEST_LOG, appendedLog(previous, requestLine(HOOK, model, sent)));
         } catch {
           $.ui.log("request log not written");
         }

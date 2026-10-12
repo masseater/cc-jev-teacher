@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import type { Questions } from "@typesafe-ai/sdk";
 import type { MatchedHook } from "claude-code";
 import { register, resolveHookConfig } from "./hook.ts";
-import { estimateTokens } from "./jev.js";
+import { estimateTokens } from "../tokens.ts";
 import { trimOutput } from "./output.js";
 
 const outputWithTokens = (tokens: number) =>

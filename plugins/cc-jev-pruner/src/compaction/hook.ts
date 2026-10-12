@@ -9,7 +9,7 @@ import type {
 } from "claude-code";
 
 import { compact, reductionRatio, resolveOptions } from "./compact.js";
-import { type JevBackend, moduleBackend, systemOneRequest } from "../backend.ts";
+import { type BackendEnv, type JevBackend, moduleBackend, systemOneRequest } from "../backend.ts";
 import { type JevAsker, parseJevResponse } from "../jev.ts";
 import {
   appendedLog,
@@ -20,6 +20,8 @@ import {
   tally,
 } from "../request-log.ts";
 import type { CompactOptions, CompactResult, Message, ToolResult, ToolUse } from "./types.js";
+
+const HOOK = "compaction";
 
 const HOOK_DEFAULTS = {
   compactAtPercent: 60,
@@ -224,7 +226,7 @@ async function backendOf(
   },
   options: PluginOptions,
 ): Promise<JevBackend> {
-  const env = {
+  const env: BackendEnv = {
     OPENROUTER_API_KEY: await $.env.get("OPENROUTER_API_KEY"),
     OPENROUTER_MODEL: await $.env.get("OPENROUTER_MODEL"),
     CC_JEV_TEACHER_ALLOW_TRAINING: await $.env.get("CC_JEV_TEACHER_ALLOW_TRAINING"),
@@ -233,7 +235,7 @@ async function backendOf(
   };
   return moduleBackend(options, env, {
     project: (await $.session.root()).split("/").filter(Boolean).at(-1) ?? "",
-    hook: "compaction",
+    hook: HOOK,
     sessionId: await $.session.id(),
   });
 }
@@ -295,7 +297,7 @@ export const register: Register = (on: On, options: PluginOptions) => {
           const previous = (await $.fs.exists(REQUEST_LOG)) ? await $.fs.read(REQUEST_LOG) : "";
           await $.fs.write(
             REQUEST_LOG,
-            appendedLog(previous, requestLine("compaction", backend.model, sent)),
+            appendedLog(previous, requestLine(HOOK, backend.model, sent)),
           );
         } catch {
           $.ui.log("request log not written");
