@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vite-plus/test";
+import type { Questions } from "@typesafe-ai/sdk";
 import type { BuiltinToolResults, MatchedHook } from "claude-code";
 import { register } from "./hook.ts";
 import type { HookConfig, HookFetchInit } from "./hook.ts";
 import type { ConversationMessage } from "./history.js";
-import type { JevQuestions } from "./jev.js";
 import { REQUEST_LOG_DIR } from "../request-log.ts";
 
 const archiveWrites = (write: { mock: { calls: unknown[][] } }) =>
@@ -34,12 +34,14 @@ function harness(options: Partial<HookConfig> = {}) {
   const bodies: string[] = [];
   const fetch = vi.fn(async (_url: string, init?: HookFetchInit) => {
     bodies.push(init?.body ?? "");
-    const { questions } = JSON.parse(init?.body ?? "{}") as { questions: JevQuestions };
+    const { questions } = JSON.parse(init?.body ?? "{}") as { questions: Questions };
     return {
       status: 200,
       ok: true,
       text: JSON.stringify({
-        answers: Object.fromEntries(Object.keys(questions).map((id) => [id, { noul: 0.1 }])),
+        answers: Object.fromEntries(
+          Object.keys(questions).map((id) => [id, { type: "noul" as const, noul: 0.1 }]),
+        ),
       }),
     };
   });

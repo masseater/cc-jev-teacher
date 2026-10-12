@@ -1,10 +1,14 @@
 import { describe, expect, it, vi } from "vite-plus/test";
+import type { Questions } from "@typesafe-ai/sdk";
+import type { JevAsker } from "../jev.ts";
 import { trimOutput } from "./output.js";
-import { estimateStateTokens, estimateTokens, type JevAsker, type JevQuestions } from "./jev.js";
+import { estimateStateTokens, estimateTokens } from "./jev.js";
 
-function answersFor(questions: JevQuestions, score: (id: string) => number) {
+function answersFor(questions: Questions, score: (id: string) => number) {
   return {
-    answers: Object.fromEntries(Object.keys(questions).map((id) => [id, { noul: score(id) }])),
+    answers: Object.fromEntries(
+      Object.keys(questions).map((id) => [id, { type: "noul" as const, noul: score(id) }]),
+    ),
   };
 }
 

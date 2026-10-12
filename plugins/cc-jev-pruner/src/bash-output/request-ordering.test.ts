@@ -37,7 +37,10 @@ describe("scoring request ordering under a fixed allowance", () => {
               answers: Object.fromEntries(
                 Object.keys(questions).map((id) => [
                   id,
-                  { noul: id === "c3" && serialized.includes("KEEP_COBALT") ? 1 : 0 },
+                  {
+                    type: "noul" as const,
+                    noul: id === "c3" && serialized.includes("KEEP_COBALT") ? 1 : 0,
+                  },
                 ]),
               ),
             };

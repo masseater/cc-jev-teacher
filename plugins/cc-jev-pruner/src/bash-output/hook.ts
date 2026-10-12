@@ -1,7 +1,8 @@
 import type { On, PluginOptions, Register, SessionMessage } from "claude-code";
 
 import { type JevBackend, moduleBackend, systemOneRequest } from "../backend.ts";
-import { estimateTokens, parseJevResponse } from "./jev.js";
+import { type JevAsker, parseJevResponse } from "../jev.ts";
+import { estimateTokens } from "./jev.js";
 import {
   classifyOutput,
   exceedsOutputThreshold,
@@ -11,7 +12,6 @@ import {
   trimOutput,
 } from "./output.js";
 import type { TrimOutputResult } from "./output.js";
-import type { JevAsker } from "./jev.js";
 import { looksSecret } from "./secrets.js";
 import {
   appendedLog,

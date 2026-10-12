@@ -10,7 +10,7 @@ import type {
 
 import { compact, reductionRatio, resolveOptions } from "./compact.js";
 import { type JevBackend, moduleBackend, systemOneRequest } from "../backend.ts";
-import { parseJevResponse } from "./request.js";
+import { type JevAsker, parseJevResponse } from "../jev.ts";
 import {
   appendedLog,
   count,
@@ -19,14 +19,7 @@ import {
   requestLine,
   tally,
 } from "../request-log.ts";
-import type {
-  CompactOptions,
-  CompactResult,
-  JevAsker,
-  Message,
-  ToolResult,
-  ToolUse,
-} from "./types.js";
+import type { CompactOptions, CompactResult, Message, ToolResult, ToolUse } from "./types.js";
 
 const HOOK_DEFAULTS = {
   compactAtPercent: 60,

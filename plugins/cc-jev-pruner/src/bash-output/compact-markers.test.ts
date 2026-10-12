@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { JevAsker } from "./jev.js";
+import type { JevAsker } from "../jev.ts";
 import { trimOutput } from "./output.js";
 import { classifyInformation, isProtectedLine } from "./retention.js";
 
@@ -28,7 +28,7 @@ const asker: JevAsker = {
           .filter((chunk) => chunk.id in questions)
           .map((chunk) => [
             chunk.id,
-            { noul: chunk.text.includes("uncertain detail") ? 0.11 : 0.01 },
+            { type: "noul" as const, noul: chunk.text.includes("uncertain detail") ? 0.11 : 0.01 },
           ]),
       ),
     };

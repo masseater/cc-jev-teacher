@@ -1,11 +1,15 @@
 import { describe, expect, it, vi } from "vite-plus/test";
+import type { JevAsker } from "../jev.ts";
 import { trimOutput } from "./output.js";
-import type { JevAsker } from "./jev.js";
 
 const output = Array.from({ length: 30 }, () => "log ".repeat(360)).join("\n");
 const asker: JevAsker = {
   async ask(_state, questions) {
-    return { answers: Object.fromEntries(Object.keys(questions).map((id) => [id, { noul: 1 }])) };
+    return {
+      answers: Object.fromEntries(
+        Object.keys(questions).map((id) => [id, { type: "noul" as const, noul: 1 }]),
+      ),
+    };
   },
 };
 

@@ -1,12 +1,15 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import type { JevAsker, JevQuestions } from "./jev.js";
+import type { Questions } from "@typesafe-ai/sdk";
+import type { JevAsker } from "../jev.ts";
 import { estimateTokens } from "./jev.js";
 import { trimOutput } from "./output.js";
 
 const progress = () =>
   Array.from({ length: 600 }, (_, index) => `progress: item ${index} ${"cached ".repeat(16)}`);
-const answer = (questions: JevQuestions, score: number) => ({
-  answers: Object.fromEntries(Object.keys(questions).map((id) => [id, { noul: score }])),
+const answer = (questions: Questions, score: number) => ({
+  answers: Object.fromEntries(
+    Object.keys(questions).map((id) => [id, { type: "noul" as const, noul: score }]),
+  ),
 });
 const input = (lines: string[]) => ({
   command: "build",

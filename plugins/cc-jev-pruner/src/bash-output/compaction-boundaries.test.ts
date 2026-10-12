@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { JevAsker } from "./jev.js";
+import type { JevAsker } from "../jev.ts";
 import { trimOutput } from "./output.js";
 
 describe("refined chunk boundaries", () => {
@@ -20,6 +20,7 @@ describe("refined chunk boundaries", () => {
               .map((chunk) => [
                 chunk.id,
                 {
+                  type: "noul" as const,
                   noul: /ERROR|Exit status/.test(chunk.text)
                     ? 0.99
                     : ["c2", "c3"].includes(chunk.id)
@@ -65,7 +66,9 @@ describe("refined chunk boundaries", () => {
       {
         async ask(_state, questions) {
           return {
-            answers: Object.fromEntries(Object.keys(questions).map((id) => [id, { noul: 0 }])),
+            answers: Object.fromEntries(
+              Object.keys(questions).map((id) => [id, { type: "noul" as const, noul: 0 }]),
+            ),
           };
         },
       },

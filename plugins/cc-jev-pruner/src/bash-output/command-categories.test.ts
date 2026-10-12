@@ -1,13 +1,15 @@
 import { describe, expect, it, vi } from "vite-plus/test";
+import type { Questions } from "@typesafe-ai/sdk";
 import { classifyOutput, trimOutput } from "./output.js";
 import { estimateStateTokens, estimateTokens } from "./jev.js";
-import type { JevQuestions, JevState } from "./jev.js";
 
 const noise = Array.from({ length: 200 }, (_, i) => `${i}: ${"cached unchanged ".repeat(30)}`).join(
   "\n",
 );
-const dropAll = async (_state: JevState, questions: JevQuestions) => ({
-  answers: Object.fromEntries(Object.keys(questions).map((id) => [id, { noul: 0 }])),
+const dropAll = async (_state: unknown, questions: Questions) => ({
+  answers: Object.fromEntries(
+    Object.keys(questions).map((id) => [id, { type: "noul" as const, noul: 0 }]),
+  ),
 });
 
 describe("output categories", () => {
@@ -127,9 +129,12 @@ describe("category scoring state", () => {
     "preserves %s (%s) guidance with a %i-character budget",
     async (command, category, maxChars) => {
       const onDecision = vi.fn();
-      const ask = vi.fn(async (_state: JevState, questions: JevQuestions) => ({
+      const ask = vi.fn(async (_state: unknown, questions: Questions) => ({
         answers: Object.fromEntries(
-          Object.keys(questions).map((id) => [id, { noul: id.startsWith("c") ? 0.9 : 0.1 }]),
+          Object.keys(questions).map((id) => [
+            id,
+            { type: "noul" as const, noul: id.startsWith("c") ? 0.9 : 0.1 },
+          ]),
         ),
       }));
       const result = await trimOutput(

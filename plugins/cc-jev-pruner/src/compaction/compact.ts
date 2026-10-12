@@ -1,4 +1,6 @@
-import { noulAnswer } from "./request.js";
+import type { Questions } from "@typesafe-ai/sdk";
+
+import { type JevAsker, noulAnswer } from "../jev.ts";
 import { collectToolCalls, estimateTokens, fitState } from "./state.js";
 import type {
   CallAnswer,
@@ -6,8 +8,6 @@ import type {
   CompactOptions,
   CompactResult,
   CompactionState,
-  JevAsker,
-  JevQuestions,
   Message,
   ResolvedCompactOptions,
   ToolCall,
@@ -51,7 +51,7 @@ export function resolveOptions(options: CompactOptions = {}): ResolvedCompactOpt
 }
 
 /** The two `noul` questions asked about one call: keep the call, keep its result. */
-export function questionsFor(call: ToolCall): JevQuestions {
+export function questionsFor(call: ToolCall): Questions {
   return {
     [`call_${call.id}`]: {
       type: "noul",
@@ -117,7 +117,7 @@ async function askBatch(
   state: CompactionState,
   batch: readonly ToolCall[],
 ): Promise<Map<string, CallAnswer>> {
-  const questions: JevQuestions = Object.assign({}, ...batch.map(questionsFor));
+  const questions: Questions = Object.assign({}, ...batch.map(questionsFor));
   const { answers } = await asker.ask(state, questions);
   return new Map(
     batch.map((call) => [

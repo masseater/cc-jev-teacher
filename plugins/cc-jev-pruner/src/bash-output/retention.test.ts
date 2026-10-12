@@ -1,16 +1,18 @@
 import { describe, expect, it, vi } from "vite-plus/test";
+import type { Questions } from "@typesafe-ai/sdk";
 import { classifyInformation } from "./retention.js";
 import { trimOutput } from "./output.js";
 import { estimateTokens } from "./jev.js";
-import type { JevQuestions, JevState } from "./jev.js";
 
 const noise = Array.from(
   { length: 400 },
   (_, i) => `INFO cache module ${i} ${"unchanged ".repeat(30)}`,
 ).join("\n");
 const score = (probability: number) =>
-  vi.fn(async (_state: JevState, questions: JevQuestions) => ({
-    answers: Object.fromEntries(Object.keys(questions).map((id) => [id, { noul: probability }])),
+  vi.fn(async (_state: unknown, questions: Questions) => ({
+    answers: Object.fromEntries(
+      Object.keys(questions).map((id) => [id, { type: "noul" as const, noul: probability }]),
+    ),
   }));
 
 describe("information retention rules", () => {
@@ -105,7 +107,7 @@ describe("information retention rules", () => {
     const lines = noise.split("\n");
     lines[207] = "release identifier = stable-deployment";
     const output = lines.join("\n");
-    const ask = vi.fn(async (state: JevState, questions: JevQuestions) => {
+    const ask = vi.fn(async (state: unknown, questions: Questions) => {
       if (Object.keys(questions).some((id) => id.startsWith("g")))
         throw new Error("scorer unavailable");
       return score(0.99)(state, questions);
@@ -125,7 +127,7 @@ describe("information retention rules", () => {
 
   it("scores chunks against the newest instructions in history", async () => {
     const output = noise.replace("module 205 ", "module 205 release_identifier=stable ");
-    const ask = vi.fn(async (state: JevState, questions: JevQuestions) => {
+    const ask = vi.fn(async (state: unknown, questions: Questions) => {
       const { history, chunks } = state as {
         history: { text?: string }[];
         chunks: { id: string; text: string }[];
@@ -136,6 +138,7 @@ describe("information retention rules", () => {
           Object.keys(questions).map((id) => [
             id,
             {
+              type: "noul" as const,
               noul:
                 required &&
                 chunks.find((chunk) => chunk.id === id)!.text.includes("release_identifier")
