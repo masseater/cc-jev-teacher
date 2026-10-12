@@ -1,5 +1,7 @@
 import { defineConfig } from "vite-plus";
 
+const GENERATED_TYPES = "plugins/cc-jev-pruner/types/**";
+
 export default defineConfig({
   staged: {
     "*": "vp check --fix",
@@ -8,9 +10,9 @@ export default defineConfig({
       "bun node_modules/.bin/dead-cliche check",
     ],
   },
-  fmt: { ignorePatterns: ["types/**"] },
+  fmt: { ignorePatterns: [GENERATED_TYPES] },
   lint: {
-    ignorePatterns: ["types/**"],
+    ignorePatterns: [GENERATED_TYPES],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     rules: { "vite-plus/prefer-vite-plus-imports": "error" },
     options: { typeAware: true, typeCheck: true },

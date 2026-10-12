@@ -12,8 +12,8 @@
     "skipLibCheck": true,
     "types": ["bun"],
     "paths": {
-      "claude-code": ["./types/claude-code.d.ts"]
+      "claude-code": ["./plugins/cc-jev-pruner/types/claude-code.d.ts"]
     }
   },
-  "include": ["plugins/*/src", "plugins/*/hooks", "scripts", "types"]
+  "include": ["plugins/*/src", "plugins/*/hooks", "scripts", "plugins/cc-jev-pruner/types"]
 }
