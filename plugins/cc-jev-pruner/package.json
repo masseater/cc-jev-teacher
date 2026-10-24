@@ -5,7 +5,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
     "@typesafe-ai/sdk": "0.6.0",
-    "ignore": "7.0.5",
+    "ignore": "7.0.14",
     "tree-sitter-go": "0.25.0",
     "tree-sitter-python": "0.25.0",
     "tree-sitter-rust": "0.24.0",
