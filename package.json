@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
-    "@typesafe-ai/sdk": "0.6.0",
+    "@typesafe-ai/sdk": "0.7.0",
     "cc-hooks-ts": "2.1.281",
     "ignore": "7.0.5",
     "textlint-rule-ux-writing-dead-cliche": "^0.18.0",
