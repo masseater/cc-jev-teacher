@@ -67,17 +67,23 @@ export const jevFor = (input: { session_id: string }) => {
   };
 
   // Asks Jev every question in one request and returns the probability of yes for each key.
-  const noulsOf = async (state: EntryType, questions: Record<string, NoulQuestion>) => {
+  const noulsOf = async (
+    state: NonNullable<EntryType>,
+    questions: Record<string, NoulQuestion>,
+  ) => {
     const { answers } = await systemOne({ state, questions });
     return Object.keys(questions).map((key) => ({ key, noul: answers[key]?.noul ?? 0 }));
   };
 
   // Asks Jev every question in one request and returns the keys answered yes.
-  const yesKeysOf = async (state: EntryType, questions: Record<string, NoulQuestion>) =>
+  const yesKeysOf = async (
+    state: NonNullable<EntryType>,
+    questions: Record<string, NoulQuestion>,
+  ) =>
     (await noulsOf(state, questions)).filter(({ noul }) => noul >= THRESHOLD).map(({ key }) => key);
 
   // Asks Jev every check in one request and returns the reasons of the checks that fail, as list items.
-  const failedOf = async (state: EntryType, checks: Checks) => {
+  const failedOf = async (state: NonNullable<EntryType>, checks: Checks) => {
     const failed = await yesKeysOf(
       state,
       Object.fromEntries(Object.entries(checks).map(([key, check]) => [key, check.question])),

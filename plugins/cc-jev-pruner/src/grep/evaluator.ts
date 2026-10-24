@@ -1,13 +1,13 @@
 import { setTimeout as delay } from "node:timers/promises";
 import { stripVTControlCharacters } from "node:util";
 
-import { noul, type EntryType } from "@typesafe-ai/sdk";
+import { noul, type JsonValue } from "@typesafe-ai/sdk";
 
 import { type JevBackend, systemOneRequest } from "../backend.ts";
 import { type createEvaluationCache, type CacheInput } from "./cache.ts";
 
 export type EvaluationRequest = {
-  state: EntryType;
+  state: JsonValue;
   questions: Record<string, { type: "boolean"; instructions: string }>;
 };
 
