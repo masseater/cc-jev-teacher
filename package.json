@@ -6,7 +6,7 @@
     "prepare": "vp config"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.32.1",
+    "@modelcontextprotocol/sdk": "1.32.2",
     "@typesafe-ai/sdk": "0.6.0",
     "cc-hooks-ts": "2.1.281",
     "ignore": "7.0.5",
