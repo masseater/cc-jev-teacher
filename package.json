@@ -7,31 +7,31 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
-    "@typesafe-ai/sdk": "0.6.0",
+    "@typesafe-ai/sdk": "0.7.0",
     "cc-hooks-ts": "2.1.281",
-    "ignore": "7.0.5",
+    "ignore": "7.0.14",
     "textlint-rule-ux-writing-dead-cliche": "^0.18.0",
     "tree-sitter-go": "0.25.0",
     "tree-sitter-python": "0.25.0",
     "tree-sitter-rust": "0.24.0",
     "typescript": "5.9.3",
     "valibot": "1.5.0",
-    "web-tree-sitter": "0.27.0",
-    "zod": "4.6.5"
+    "web-tree-sitter": "0.27.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",
     "jev-lint": "0.7.0",
-    "vite": "npm:@voidzero-dev/vite-plus-core@1.1.0",
-    "vite-plus": "1.1.0"
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0",
+    "vite-plus": "1.4.0"
   },
   "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@1.1.0"
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0"
   },
   "devEngines": {
     "packageManager": {
       "name": "bun",
-      "version": "1.4.2",
+      "version": "1.4.4",
       "onFail": "download"
     }
   },

@@ -1,4 +1,4 @@
-import type { Questions, SystemOneRequestPayload, SystemOneResult } from "@typesafe-ai/sdk";
+import type { Questions, SystemOneRequest, SystemOneResult } from "@typesafe-ai/sdk";
 
 type Result = SystemOneResult<Questions>;
 
@@ -7,7 +7,7 @@ export type JevResponse = Pick<Result, "answers"> & Partial<Pick<Result, "model"
 
 /** Anything that can answer Jev questions, such as the hooks' OpenRouter adapter. */
 export interface JevAsker {
-  ask(state: SystemOneRequestPayload["state"] | object, questions: Questions): Promise<JevResponse>;
+  ask(state: SystemOneRequest["state"] | object, questions: Questions): Promise<JevResponse>;
 }
 
 function isJevResponse(value: unknown): value is JevResponse {
