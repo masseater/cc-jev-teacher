@@ -3,8 +3,6 @@ name: dont-it-yourself
 description: 新しい処理・ヘルパー・ツールを書き始める前に使う。ライブラリ、ランタイム、リポジトリにすでにあるものを探して使う
 ---
 
-<!-- jev-lint-ignore-file document-lacks-firsthand-evidence -->
-
 # 自前で作らない
 
 既存のものがあればそれを使う。既存の関数を包むだけのラッパーも作らない。
