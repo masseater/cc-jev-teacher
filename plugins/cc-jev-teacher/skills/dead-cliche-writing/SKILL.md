@@ -3,8 +3,6 @@ name: dead-cliche-writing
 description: "AI特有の日本語クリシェを検出し、意味を保ったまま論文調の平易な文章に書き直す。日本語の文章・記事・ドキュメントを書くとき、書き直すとき、レビューするときに使う。Triggers: クリシェ, AIっぽい, 平易に, リライト, 推敲, 文章レビュー, 校正, 言い換え, plain writing."
 ---
 
-<!-- jev-lint-ignore-file document-lacks-firsthand-evidence -->
-
 # クリシェを消して平易に書く
 
 クリシェは言い換えずに、欠けている情報（誰が、何を基準に、何をするか）を書いて置き換える。

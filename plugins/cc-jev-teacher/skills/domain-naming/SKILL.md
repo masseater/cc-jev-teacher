@@ -3,8 +3,6 @@ name: domain-naming
 description: "クラス・関数・型・モジュールに、仕組み（処理・保存・変換・通信）ではなく業務で表すものの名前を付ける。名前を付けるとき、見直すとき、ドメインモデルをレビューするときに使う。Triggers: 命名, ドメイン, DDD, ユビキタス言語, 用語集, rename, naming."
 ---
 
-<!-- jev-lint-ignore-file document-lacks-firsthand-evidence -->
-
 # ドメインの言葉で名付ける
 
 名前は、業務に詳しい人が同じものを指すときの言葉にする。HTTP・DB・CLIとの接続や汎用のユーティリティは、仕組みの名前でよい。
