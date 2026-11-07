@@ -16,7 +16,7 @@
     "tree-sitter-rust": "0.24.0",
     "typescript": "6.0.3",
     "valibot": "1.5.0",
-    "web-tree-sitter": "0.27.1",
+    "web-tree-sitter": "0.27.2",
     "zod": "4.6.7"
   },
   "devDependencies": {
