@@ -2,6 +2,7 @@ import { Parser, Language, Query } from "web-tree-sitter";
 import { createRequire } from "node:module";
 import { declarations } from "./parser-declarations.mjs";
 import { preview } from "./parser-preview.mjs";
+import { typescriptDeclarations } from "./parser-typescript.mjs";
 let initialized;
 const languages = new Map();
 async function parse(source, action, languageName = "python") {
@@ -424,6 +425,7 @@ export async function execute(helper, input) {
   const data = JSON.parse(input);
   if (helper === "declarations")
     return parse(data.source, (root) => declarations(root, data.language), data.language);
+  if (helper === "typescript") return typescriptDeclarations(data);
   if (helper === "neighborhood")
     return parse(data.source, (root) => neighborhood(root, data.ranges));
   if (helper === "calls")

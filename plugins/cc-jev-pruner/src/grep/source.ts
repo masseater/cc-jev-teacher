@@ -1,4 +1,3 @@
-import ts from "typescript";
 import { runParser } from "./parser.ts";
 
 export type Range = { startLine: number; endLine: number };
@@ -120,52 +119,13 @@ export async function inspect(
     comments = pythonComments;
     mode = "python";
   } else if (/\.(?:[cm]?[jt]s|[jt]sx)$/.test(path)) {
-    const kind = path.endsWith(".tsx")
-      ? ts.ScriptKind.TSX
-      : path.endsWith(".jsx")
-        ? ts.ScriptKind.JSX
-        : /\.[cm]?js$/.test(path)
-          ? ts.ScriptKind.JS
-          : ts.ScriptKind.TS;
-    const file = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true, kind);
-    syntaxFallback = !!(file as ts.SourceFile & { parseDiagnostics?: unknown[] }).parseDiagnostics
-      ?.length;
-    const line = (position: number) => file.getLineAndCharacterOfPosition(position).line + 1;
-    const add = (node: ts.Node, prefix = "", ownerHeaders: Range[] = []) => {
-      const named = node as ts.Node & { name?: ts.Node };
-      const name =
-        prefix +
-        (named.name?.getText(file) ||
-          (ts.isVariableStatement(node)
-            ? node.declarationList.declarations.map((d) => d.name.getText(file)).join(", ")
-            : "source"));
-      if (ts.isClassDeclaration(node) && node.members.length) {
-        const start = line(node.getStart(file)),
-          first = line(node.members[0]!.getStart(file));
-        const header = first > start ? { startLine: start, endLine: first - 1 } : undefined;
-        const headers = header ? [...ownerHeaders, header] : ownerHeaders;
-        if (header) units.push({ name: name + ".context", range: header, ownerHeaders: headers });
-        for (const member of node.members) add(member, name + ".", headers);
-      } else
-        units.push({
-          name,
-          ownerHeaders,
-          range: {
-            startLine: line(node.getStart(file)),
-            endLine: line(Math.max(node.getStart(file), node.end - 1)),
-          },
-        });
-    };
-    if (!syntaxFallback) for (const statement of file.statements) add(statement);
-    const visit = (node: ts.Node) => {
-      for (const comment of [
-        ...(ts.getLeadingCommentRanges(source, node.getFullStart()) ?? []),
-        ...(ts.getTrailingCommentRanges(source, node.end) ?? []),
-      ])
-        comments.push({ startLine: line(comment.pos), endLine: line(comment.end - 1) });
-      ts.forEachChild(node, visit);
-    };
-    visit(file);
+    const parsed = await runParser<{ units: typeof units; comments: Range[]; syntax: boolean }>(
+      "typescript",
+      JSON.stringify({ source, path }),
+      options.signal,
+    );
+    if (!parsed) throw new Error("TypeScript parser returned no result");
+    ({ units, comments, syntax: syntaxFallback } = parsed);
     mode = "typescript";
   } else if (/\.(go|rs)$/.test(path)) {
     const parsed = await runParser<{ units: typeof units; comments: Range[] }>(
