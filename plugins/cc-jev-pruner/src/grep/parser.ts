@@ -1,7 +1,7 @@
 import { fork, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
 
-type Helper = "inspect" | "preview" | "neighborhood" | "calls" | "declarations";
+type Helper = "inspect" | "preview" | "neighborhood" | "calls" | "declarations" | "typescript";
 type Pending = {
   helper: Helper;
   input: string;

@@ -252,10 +252,24 @@ describe("inspect", () => {
     });
   });
 
-  it("falls back on an unterminated string", async () => {
-    expect(await summarize("src/string.js", 'const text = "open;\n')).toMatchObject({
-      mode: "text",
-      fallback: "syntax",
+  it.each([
+    ["an unterminated string", "src/string.js", 'const text = "open;\n'],
+    ["an invalid character", "src/import.ts", 'import { a,\\ b } from "./a.ts";\n'],
+    ["a missing '>'", "src/types.d.ts", "interface A extends B<C {}\n"],
+    ["an unclosed JSX element", "src/view.tsx", "const view = (\n  <A>\n    <B>\n  </A>\n);\n"],
+    ["a broken reference directive", "src/lib.ts", '/// <reference lib=</"dom" />\nconst a = 1;\n'],
+  ])("falls back on %s", async (_, path, source) => {
+    expect(await summarize(path, source)).toMatchObject({ mode: "text", fallback: "syntax" });
+  });
+
+  it.each([
+    ["TypeScript-only syntax", "let x: number = 1;\nenum E {}\nconst y = x!;\n"],
+    ["a misplaced decorator", "@dec const a = 1;\n"],
+    ["a broken JSDoc type", '/** @typedef {import("./a").`B} B */\nconst c = 1;\n'],
+  ])("parses JavaScript with %s", async (_, source) => {
+    expect(await summarize("src/loose.js", source)).toMatchObject({
+      mode: "typescript",
+      fallback: undefined,
     });
   });
 
