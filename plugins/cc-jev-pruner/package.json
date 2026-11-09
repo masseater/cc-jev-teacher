@@ -9,7 +9,7 @@
     "tree-sitter-go": "0.25.0",
     "tree-sitter-python": "0.25.0",
     "tree-sitter-rust": "0.24.0",
-    "typescript": "7.1.0-beta",
+    "typescript": "7.1.0-dev.20261109.1",
     "web-tree-sitter": "0.27.2",
     "zod": "4.6.7"
   }
