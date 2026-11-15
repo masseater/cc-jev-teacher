@@ -136,9 +136,7 @@ export function classifyOutput(command: string, output: string): OutputCategory 
       simple,
     ) ||
     /^(cargo|go)\s+(build|test|check|clippy|install)(?:\s|$)/.test(simple) ||
-    /^cmake\s+--build(?:\s|$)/.test(simple) ||
-    /^(pip[23]?|uv\s+pip)\s+install(?:\s|$)/.test(simple) ||
-    /^python(?:[23](?:\.\d+)?)?\s+-m\s+(pytest|unittest|build|pip\s+install)(?:\s|$)/.test(simple)
+    /^cmake\s+--build(?:\s|$)/.test(simple)
   )
     return "build";
   return "unknown";

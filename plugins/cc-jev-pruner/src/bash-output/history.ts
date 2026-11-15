@@ -1,7 +1,8 @@
+import type { Role } from "../compaction/types.ts";
 import { estimateStateTokens } from "../tokens.ts";
 
 export interface ConversationMessage {
-  role: "user" | "assistant";
+  role: Role;
   text: string;
   toolUses: readonly {
     tool_use_id: string;

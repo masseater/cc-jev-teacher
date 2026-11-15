@@ -39,7 +39,7 @@ describe("information retention rules", () => {
 
   it.each([
     [
-      'python3 -c "print(readme)"',
+      'node -e "console.log(readme)"',
       "Warning: unauthenticated download\n---\nconfigs:\n- config_name: metadata\n# Dataset usage",
     ],
     ["sed -n '577,951p' mystery.asm", "  401c23:\tucomiss xmm6,xmm2\n  401c26:\tjbe 401c54"],

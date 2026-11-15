@@ -66,9 +66,9 @@ To see what each hook costs, read `.claude/cc-jev-teacher/requests.jsonl` in you
 
 The pruner is built on these MIT-licensed projects. Their licenses are kept next to the code.
 
-- Compaction: [tamaratran/fast-jev-compaction](https://github.com/tamaratran/fast-jev-compaction) at [`e3f262a`](https://github.com/tamaratran/fast-jev-compaction/tree/e3f262a7f4d42bd8dd32ced30d26176f7cb545b0) ([license](plugins/cc-jev-pruner/src/compaction/LICENSE))
-- Code search: [dzhng/jevgrep](https://github.com/dzhng/jevgrep) at [`703aba1`](https://github.com/dzhng/jevgrep/tree/703aba1a36a3b854be405244ea748f607cd630c0) ([license](plugins/cc-jev-pruner/src/grep/LICENSE))
-- Bash output trimming: [tamaratran/jev-pruner](https://github.com/tamaratran/jev-pruner) at [`edbc602`](https://github.com/tamaratran/jev-pruner/tree/edbc60262a5edc07e18d646c1a3f8a9f0ae868c5) ([license](plugins/cc-jev-pruner/src/bash-output/LICENSE))
+- Compaction: [tamaratran/fast-jev-compaction](https://github.com/tamaratran/fast-jev-compaction) at [`e3f262a`](https://github.com/tamaratran/fast-jev-compaction/tree/e3f262a7f4d42bd8dd32ced30d26176f7cb545b0)
+- Code search: [dzhng/jevgrep](https://github.com/dzhng/jevgrep) at [`703aba1`](https://github.com/dzhng/jevgrep/tree/703aba1a36a3b854be405244ea748f607cd630c0)
+- Bash output trimming: [tamaratran/jev-pruner](https://github.com/tamaratran/jev-pruner) at [`edbc602`](https://github.com/tamaratran/jev-pruner/tree/edbc60262a5edc07e18d646c1a3f8a9f0ae868c5)
 
 The teacher's `dead-cliche-writing` skill comes from [BoxPistols/ux-writing-dead-cliche](https://github.com/BoxPistols/ux-writing-dead-cliche) (MIT).
 
