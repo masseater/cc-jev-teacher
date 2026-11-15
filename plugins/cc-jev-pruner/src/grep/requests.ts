@@ -1,3 +1,5 @@
+import type { DirectoryEntry } from "./filesystem.ts";
+
 export type Declaration = { name: string; startLine: number; endLine: number };
 export type Evidence = { path: string; startLine: number; endLine: number; source: string };
 
@@ -80,7 +82,7 @@ export type DirectoryPreview = {
 };
 export type NavigationItem = {
   path: string;
-  kind: "directory" | "file";
+  kind: DirectoryEntry["kind"];
   sourceRange?: { startLine: number; endLine: number };
   filePreview?: FilePreview;
   childPreview?: DirectoryPreview;

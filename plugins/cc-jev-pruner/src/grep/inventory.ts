@@ -1,4 +1,5 @@
 import { createFilesystem, type FilesystemPolicy } from "./filesystem.ts";
+import type { RetrievalResult } from "./types.ts";
 
 export type InventoryInput = {
   root: string;
@@ -8,7 +9,7 @@ export type InventoryInput = {
   maxEntries?: number;
 };
 export type Inventory = {
-  status: "complete" | "incomplete" | "interrupted";
+  status: RetrievalResult["status"];
   files: number;
   bytes: number;
   directories: Array<{ path: string; files: number; bytes: number }>;

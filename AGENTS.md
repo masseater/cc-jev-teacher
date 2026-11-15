@@ -12,6 +12,6 @@
 ## コマンドと構成
 
 - `vp run check` は `vite.config.ts` のタスクで、`vp check`・`vp test run`・`bun scripts/sync-shared.ts --check`・Markdownのdead-cliche・`claude plugin validate` をまとめて動かす。1ファイルのテストは `vp test run <path>` で動かす
-- hookは `plugins/<plugin>/hooks/hooks.json` から `bun` で `src/` のTypeScriptを直接起動する。本物のhookに通すときは、hookの入力JSONを標準入力に渡して `bun plugins/cc-jev-teacher/src/<hook>.ts` を動かし、キーは `OPENROUTER_API_KEY` で渡す。キーが無いとhookは何もしない
+- hookは `plugins/<plugin>/hooks/hooks.json` から `bun` で `src/` のTypeScriptを直接起動する。本物のhookに通すときは、hookの入力JSONを標準入力に渡して `bun plugins/<plugin>/src/<hook>.ts` を動かし、キーは `OPENROUTER_API_KEY` で渡す。キーが無いとhookは何もしない
 - インストールされたpluginは自分のディレクトリしか読めない。teacherとprunerで共有するファイルはpruner側が原本なので、prunerを直してから `bun scripts/sync-shared.ts` でteacherへ写す
 - Claude Codeは各pluginの `package.json` と `bun.lock` から依存を入れる。ルートの `package.json` は両pluginの依存とツールをまとめて持つので、依存を変えるときはpluginとルートの両方を揃える
