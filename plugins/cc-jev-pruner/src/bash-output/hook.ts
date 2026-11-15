@@ -92,7 +92,6 @@ export function resolveHookConfig(options: PluginOptions): HookConfig {
   return config;
 }
 
-/** A `JevAsker` over the engine's `$.http.fetch`, sending to the plugin's backend. */
 export function jevAsker(fetchFn: HookFetch, backend: JevBackend): JevAsker {
   return {
     async ask(state, questions) {
@@ -310,9 +309,7 @@ export const register: Register = (on: On, options: PluginOptions) => {
               elapsedMs: Date.now() - started,
             })}`,
           );
-        } catch {
-          // Diagnostics cannot change the tool result.
-        }
+        } catch {}
       }
     }
   });

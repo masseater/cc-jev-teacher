@@ -32,7 +32,6 @@ export class EvaluationFailure extends Error {
   }
 }
 
-/** A provider answer other than 2xx, with its body parsed when it was JSON. */
 class ProviderError extends Error {
   readonly statusCode: number;
   readonly data: unknown;
@@ -53,7 +52,6 @@ const parsed = (text: string): unknown => {
   }
 };
 
-// Jevgrep asks yes/no questions; System One calls them noul questions and answers with `noul`.
 const probabilities = (data: unknown, ids: string[]): Record<string, number> => {
   const answers =
     data && typeof data === "object" && "answers" in data && data.answers
@@ -85,7 +83,6 @@ export function createEvaluator(options: {
   requestLimit?: number;
   timeoutMs?: number;
   concurrency?: number;
-  /** Called with each request body before it is sent, for the plugin's request log. */
   onRequest?: (body: string) => void;
 }) {
   const { backend } = options;
@@ -197,8 +194,6 @@ export function createEvaluator(options: {
         const release = await acquire();
         try {
           assertActive();
-          // Wait before validating source and before starting the network timeout.
-          // Recheck after validation: another worker may have set a cooldown meanwhile.
           for (;;) {
             const wait = cooldownUntil - Date.now();
             if (wait > 0) {
@@ -240,7 +235,6 @@ export function createEvaluator(options: {
             if (requests >= (options.requestLimit ?? 50_000))
               throw new EvaluationFailure("request-limit");
             const name = error instanceof Error ? error.name : "unknown";
-            // fetch rejects with a TypeError when the connection itself fails.
             const network = error instanceof TypeError;
             const transient =
               status === 408 ||
@@ -275,8 +269,6 @@ export function createEvaluator(options: {
   };
 }
 
-// Only explicit text fields from a parsed provider error are suitable for user-facing diagnostics.
-// Other fields can carry arbitrary detail objects, requests, or response bodies.
 function providerDiagnostic(error: unknown, apiKey: string): EvaluationFailure["diagnostic"] {
   if (!(error instanceof ProviderError)) return undefined;
   const data: unknown = error.data;
@@ -297,7 +289,6 @@ function providerDiagnostic(error: unknown, apiKey: string): EvaluationFailure["
     .replace(/[\p{Cc}\p{Cf}]+/gu, " ")
     .trim();
   const redacted = apiKey ? safe.replaceAll(apiKey, "[redacted]") : safe;
-  // A provider may split a credential with whitespace or invisible separators.
   if (apiKey && redacted.replace(/\s/gu, "").includes(apiKey))
     return { statusCode: error.statusCode };
   const text = redacted.slice(0, 500);

@@ -3,7 +3,6 @@ import { closeSync, fstatSync, openSync, readFileSync, readSync } from "node:fs"
 import type { Message } from "./compaction/types.ts";
 import * as v from "valibot";
 
-// A field that is dropped when it has an unexpected type, so one odd entry does not fail the hook.
 const maybe = <T extends v.GenericSchema>(schema: T) => v.fallback(v.optional(schema), undefined);
 
 const Entry = v.looseObject({
@@ -41,7 +40,6 @@ const Block = v.looseObject({
 });
 const Blocks = v.fallback(v.array(v.fallback(Block, {})), []);
 
-// Message content is either plain text or a list of blocks.
 const blocksOf = (content: unknown) =>
   v.parse(Blocks, typeof content === "string" ? [{ type: "text", text: content }] : content);
 
@@ -68,7 +66,6 @@ const promptOf = (entry: Entry) => {
 const CHUNK = 1 << 20;
 const NEWLINE = 0x0a;
 
-// Entries of the current turn: from the last human prompt to the end, read backwards in chunks.
 export const entriesOf = (transcriptPath: string) => {
   const fd = openSync(transcriptPath, "r");
   try {
@@ -116,7 +113,6 @@ export const instructionOf = (entries: Array<Entry>) =>
     }, [])
     .join("\n\n");
 
-// Feedback that Stop hooks already gave during the current turn.
 export const stopFeedbackOf = (entries: Array<Entry>) =>
   entries
     .filter((entry) => entry.type === "user")
@@ -130,14 +126,12 @@ export const toolUsesOf = (entries: Array<Entry>) =>
     .flatMap((entry) => blocksOf(entry.message?.content))
     .filter((part) => part.type === "tool_use");
 
-// The tool calls of the turn, one per line and shortened, the latest kept when there are too many.
 export const toolCallsOf = (toolUses: ReturnType<typeof toolUsesOf>) =>
   toolUses
     .map((part) => `${part.name} ${JSON.stringify(part.input ?? {}).slice(0, 300)}`)
     .join("\n")
     .slice(-12000) || "(none)";
 
-// Messages of the session as the model sees it: from the last compaction summary, which stands for everything before it.
 export const messagesOf = (transcriptPath: string): Array<Message> => {
   const entries = readFileSync(transcriptPath, "utf8").split("\n").filter(Boolean).map(entryOf);
   return entries

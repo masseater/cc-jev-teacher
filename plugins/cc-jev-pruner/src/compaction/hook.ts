@@ -40,7 +40,6 @@ export type HookFetchResponse = {
   text: string;
 };
 
-/** The shape of `$.http.fetch`, so the hook can be driven without an engine. */
 export type HookFetch = (url: string, init?: HookFetchInit) => Promise<HookFetchResponse>;
 
 export type HookConfig = CompactOptions & {
@@ -58,7 +57,6 @@ function optionString(options: PluginOptions, key: string): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
-/** Reads the plugin's `userConfig` values; anything missing takes the defaults. */
 export function resolveHookConfig(options: PluginOptions): HookConfig {
   const numbers: Partial<Omit<CompactOptions, "goal">> = {};
   for (const key of [
@@ -81,7 +79,6 @@ export function resolveHookConfig(options: PluginOptions): HookConfig {
   return config;
 }
 
-/** A `JevAsker` over the engine's `$.http.fetch`, sending to the plugin's backend. */
 export function jevAsker(fetchFn: HookFetch, backend: JevBackend): JevAsker {
   return {
     async ask(state, questions) {
@@ -115,12 +112,6 @@ function toolResultSummary(result: ToolResult): ToolResultSummary {
   };
 }
 
-/**
- * Maps the library's output back onto session messages. Whatever came back
- * unchanged (a message, a tool use, a tool result) is the engine's own object,
- * handle included; anything rebuilt is a fresh message without a handle, so the
- * engine takes the edited content instead of its original.
- */
 export function toSessionMessages(
   input: readonly SessionMessage[],
   output: readonly Message[],
@@ -155,7 +146,6 @@ export type SessionCompaction = {
   messages: SessionMessage[];
 };
 
-/** Runs the library over a session transcript; throws when the key is missing or Jev fails. */
 export async function compactSession(
   messages: readonly SessionMessage[],
   config: HookConfig,

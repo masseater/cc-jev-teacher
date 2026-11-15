@@ -57,7 +57,6 @@ export type Evaluator = {
   readonly requests: number;
   readonly cacheHits?: number;
   readonly cacheIssues?: Array<{ kind: string; count: number }>;
-  /** Validate sources before each transport attempt and before returning a cached answer. */
   evaluate(
     request: EvaluationRequest,
     policy?: { navigation?: boolean; beforeAttempt?: () => Promise<void> },

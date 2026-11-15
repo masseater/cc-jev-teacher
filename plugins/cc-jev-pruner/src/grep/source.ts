@@ -59,7 +59,6 @@ function textUnits(
     line += newlines;
     start = finish;
   }
-  // The final empty line has no bytes but still belongs to the snapshot coordinates.
   if (raw.at(-1) === 10 && range.endLine === lineCount && units.length)
     units.at(-1)!.range.endLine = lineCount;
   return units;
@@ -82,7 +81,6 @@ export async function inspect(
     );
   const { source, path } = snapshot;
   const text = sourceText(source);
-  // Context windows use conservative whole-line Python comments, including inside multiline strings.
   const pythonComments = /\.pyi?$/.test(path)
     ? source
         .split("\n")
@@ -104,7 +102,6 @@ export async function inspect(
     mode: Inspection["mode"];
   let syntaxFallback = false;
   if (/\.pyi?$/.test(path)) {
-    // A missing/incompatible packaged parser is a setup failure, never syntax fallback.
     const parsed = await runParser<Array<Range & { name: string; ownerHeaders: Range[] }>>(
       "inspect",
       source,
@@ -141,7 +138,6 @@ export async function inspect(
   comments = [...new Map(comments.map((r) => [`${r.startLine}:${r.endLine}`, r])).values()].sort(
     (a, b) => a.startLine - b.startLine,
   );
-  // Invalid declarations fall back to text, but comments still own the context-window boundaries.
   if (syntaxFallback) return { ...fallback("syntax"), comments };
   if (!units.length && source)
     return {
@@ -159,7 +155,6 @@ export async function inspect(
     mode,
     comments,
     units: units.flatMap((unit) => {
-      // Parser ranges and returned byte spans must remain tied to the original snapshot.
       const start = Math.min(
         text.bytes.length,
         text.offsets[unit.range.startLine - 1] ?? text.bytes.length,
@@ -187,7 +182,6 @@ export async function inspect(
   };
 }
 
-/** Additive policy only: callers retain selected ranges separately. */
 export async function pythonNeighborhood(
   snapshot: Snapshot,
   selected: Range[],
@@ -224,7 +218,6 @@ export type SourcePreview = {
   parseUnavailable?: boolean;
   scope?: string;
 };
-/** The preview worker handles Python declarations and generic text windows. */
 export async function pythonPreview(
   snapshot: Snapshot,
   query: string,
@@ -280,14 +273,12 @@ export async function pythonPreview(
   return result;
 }
 
-/** Byte spans include original line endings; never widen a partial unit to whole lines. */
 export function sourceForUnit(snapshot: Snapshot, unit: SourceUnit): string {
   return Buffer.from(snapshot.source)
     .subarray(unit.sourceByteStart, unit.sourceByteEnd)
     .toString("utf8");
 }
 
-/** Complete-file fragments keep admission independent of declaration-name sampling. */
 export function splitSource(snapshot: Snapshot, maxBytes = 12_000): SourceUnit[] {
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 4)
     throw new Error("Invalid source byte allowance");

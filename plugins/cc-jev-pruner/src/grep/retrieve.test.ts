@@ -18,7 +18,6 @@ writeFileSync(
 writeFileSync(join(root, "src/colors.ts"), "export const red = '#f00';\n");
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
-// Says no to questions that name colors.ts or whose source never touches EVENTS, yes to the rest.
 const evaluator: Evaluator & { requests: number } = {
   requests: 0,
   async evaluate(request) {

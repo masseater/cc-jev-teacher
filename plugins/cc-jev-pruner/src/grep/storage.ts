@@ -1,7 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-/** The one source of Jevgrep's config and cache locations; filesystem policy protects the same paths. */
 export function storageDirectory(
   kind: "config" | "cache",
   env: NodeJS.ProcessEnv = process.env,

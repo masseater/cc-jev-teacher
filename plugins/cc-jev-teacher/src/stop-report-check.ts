@@ -56,7 +56,6 @@ const questions = {
   aiJapanese: aiJapanese.question,
 };
 
-// Checks that may be given again in the same turn; every other reason is given at most once per turn.
 const repeatable = new Set(["english", "aiJapanese"]);
 
 type Question = keyof typeof questions;
@@ -65,7 +64,6 @@ const thresholds: Partial<Record<Question, number>> = { unfinished: 0.8, symptom
 
 type Hit = (key: Question) => boolean;
 
-// Listed in the order the reasons are shown. A check without `failed` fails when its own question hits.
 const checks: Record<string, { reason: string; failed?: (hit: Hit) => boolean }> = {
   unfinished: {
     reason:

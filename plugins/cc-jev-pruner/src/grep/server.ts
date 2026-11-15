@@ -1,6 +1,3 @@
-// Jevgrep as this plugin's MCP server: Claude asks how a behavior works, and the server returns
-// the files and source excerpts Jev judged relevant. Plugin MCP servers receive the plugin's
-// options in the environment, so the searches use the same OpenRouter key as the hooks.
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";

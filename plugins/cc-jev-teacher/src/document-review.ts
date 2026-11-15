@@ -14,7 +14,6 @@ const DOCS = new Set(["README.md", "AGENTS.md", "CLAUDE.md"]);
 const LIMIT = 12000;
 const SKILL_FILE = /(^|\/)skills\/([^/]+)\/SKILL\.md$/;
 
-// Skills of the repository, the user, and installed plugins.
 const skillsOf = (repositoryFiles: Array<string>) => {
   const installed = ["skills/*/SKILL.md", "plugins/cache/*/*/*/skills/*/SKILL.md"].flatMap(
     (pattern) => [...new Bun.Glob(pattern).scanSync({ cwd: CONFIG_DIR, followSymlinks: true })],
@@ -106,7 +105,6 @@ const docChecks: Checks = {
   },
 };
 
-// Existing files and directories whose path, relative to the root or to the document, or whose file name appears in the document.
 const mentionedOf = (
   repository: { root: string; files: Array<string> },
   path: string,
@@ -132,7 +130,6 @@ const mentionedOf = (
 const MARGIN = 0.1;
 const MAX_LINES = 5;
 
-// Asks Jev, line by line, which lines make each failed check fail, and keeps the lines nearly as likely as the likeliest.
 const linesOf = async (
   jev: Jev,
   state: { document: string } & Record<string, JsonValue>,

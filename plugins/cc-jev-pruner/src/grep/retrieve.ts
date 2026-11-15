@@ -24,7 +24,6 @@ import { selectTestBodies } from "./test-body-selection.ts";
 import { repositoryContext } from "./repository-context.ts";
 import type { Evaluator, FileEvidence, RetrievalResult, SearchInput } from "./types.ts";
 
-// Bound per-stage source work; the evaluator separately caps shared provider attempts.
 const stageWorkers = 32;
 const relevanceBoundary = 0.5;
 const weakScoreCeiling = 0.6;
@@ -45,7 +44,6 @@ function navigationAdmissions<T extends { score: number }>(
     suppressWeak,
   };
 }
-/** Traversal owns admission; every stage reads through the same eligibility policy. */
 export async function retrieve(input: SearchInput, evaluator: Evaluator): Promise<RetrievalResult> {
   const reader = await createFilesystem({
     root: input.root,
@@ -174,10 +172,6 @@ export async function retrieve(input: SearchInput, evaluator: Evaluator): Promis
           );
       }
     }
-    // Failed groups append their halves to the same queue. A recovered parent is
-    // not incomplete; only an exhausted leaf or a terminal failure records an issue.
-    // A pending group may still contain a strong match, so finish in-flight work
-    // before reporting that the budget was reached without confident source.
     while (batches.length && !stop && !input.signal.aborted) {
       await new Promise<void>((resolve, reject) => {
         let active = 0;
@@ -440,8 +434,6 @@ export async function retrieve(input: SearchInput, evaluator: Evaluator): Promis
         const filePreview = item.filePreview!;
         const source = await unchanged({ path: item.path, contentHash: hashes.get(item.path)! });
         if (!source) continue;
-        // Requests too large for preview scoring are split into bounded chunks.
-        // Otherwise admission uses the preview; unseen source may still be relevant.
         for (const chunk of splitSource(source, 12_000)) {
           const text = sourceForUnit(source, chunk);
           remaining.push(
@@ -656,7 +648,6 @@ export async function retrieve(input: SearchInput, evaluator: Evaluator): Promis
         }
       }
       if (anchor && !stop) {
-        // Only one relationship reconsideration, anchored before new candidates are admitted.
         const items: NavigationItem[] = [];
         for (const item of pruned.values()) {
           if (stop) break;
@@ -669,7 +660,6 @@ export async function retrieve(input: SearchInput, evaluator: Evaluator): Promis
         await discover(seeds, anchor);
       }
       const ordered = [...candidates.values()];
-      // All admitted paths survive even if subsequent source inspection is unavailable.
       for (const candidate of ordered) {
         const prior = firstSelections.get(candidate.path);
         files.set(
@@ -714,12 +704,10 @@ export async function retrieve(input: SearchInput, evaluator: Evaluator): Promis
       const selectEvidence = async () => {
         await select();
         const evidence: Evidence[] = [];
-        // Donors follow selection completion order; concurrent completion can affect request context.
         for (const path of declarations.keys()) {
           const candidate = candidates.get(path)!;
           if (stop || input.signal.aborted) break;
           if (!files.get(candidate.path)!.excerpts.length) continue;
-          // Context donors obey the same current eligibility/hash check as target files.
           if (!(await unchanged(candidate))) continue;
           evidence.push(
             ...files.get(candidate.path)!.excerpts.map((excerpt) => ({
@@ -741,7 +729,6 @@ export async function retrieve(input: SearchInput, evaluator: Evaluator): Promis
             return fresh.length ? fresh : undefined;
           });
       };
-      // File assessment reads only the discovery preview, so it runs alongside evidence selection.
       const assessments = new Map<string, { labels: string[]; priority: number }>();
       const assessFiles = () =>
         parallel(ordered, async (candidate) => {
@@ -785,11 +772,9 @@ export async function retrieve(input: SearchInput, evaluator: Evaluator): Promis
             Object.assign(file, context);
         } catch (error) {
           if (input.signal.aborted) throw error;
-          // Optional structural context cannot discard already selected evidence.
           issue("local-call-context");
         }
       });
-      // Selection replaces file records, so assessments attach afterward; invalidated files keep none.
       for (const [path, assessment] of assessments) {
         const file = files.get(path)!;
         if (!file.sourceOmitted) {
@@ -852,7 +837,6 @@ export async function retrieve(input: SearchInput, evaluator: Evaluator): Promis
         throw error;
       issue("cancelled");
     }
-    // Cancellation can occur before the selection phase creates admitted-file records.
     for (const candidate of candidates.values())
       if (!files.has(candidate.path))
         files.set(candidate.path, {
@@ -868,7 +852,6 @@ export async function retrieve(input: SearchInput, evaluator: Evaluator): Promis
       reader,
       sortedCandidates().map((candidate) => files.get(candidate.path)!),
     );
-    // File assessment may outlive the bytes it classified, for every language.
     for (const candidate of candidates.values()) await unchanged(candidate);
     return {
       root: reader.root,

@@ -2,10 +2,8 @@ import type { Questions, SystemOneRequest, SystemOneResult } from "@typesafe-ai/
 
 type Result = SystemOneResult<Questions>;
 
-/** The body Jev answers with; only `answers` is checked, so `model` and `usage` may be absent. */
 export type JevResponse = Pick<Result, "answers"> & Partial<Pick<Result, "model" | "usage">>;
 
-/** Anything that can answer Jev questions, such as the hooks' OpenRouter adapter. */
 export interface JevAsker {
   ask(state: SystemOneRequest["state"] | object, questions: Questions): Promise<JevResponse>;
 }
@@ -20,7 +18,6 @@ function isJevResponse(value: unknown): value is JevResponse {
   );
 }
 
-/** Validates a Jev response body; throws on anything but an `answers` object. */
 export function parseJevResponse(status: number, ok: boolean, text: string): JevResponse {
   if (!ok) {
     throw new Error(`Jev request failed (${status}): ${text.slice(0, 200)}`);
@@ -37,7 +34,6 @@ export function parseJevResponse(status: number, ok: boolean, text: string): Jev
   return parsed;
 }
 
-/** The `noul` probability of one answer; throws when it is not there. */
 export function noulAnswer(answers: JevResponse["answers"], name: string): number {
   const answer = answers[name];
   if (

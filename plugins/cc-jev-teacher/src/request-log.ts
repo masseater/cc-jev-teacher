@@ -18,6 +18,5 @@ export const requestLine = (hook: string, model: string, sent: RequestTally) =>
 
 export const REQUEST_LOG_IGNORE = `${REQUEST_LOG_DIR}/.gitignore`;
 
-// The log with one more line, keeping only the newest part so it never grows past what $.fs can read.
 export const appendedLog = (previous: string, line: string) =>
   `${previous.slice(-MAX_LOG_CHARS)}${line}`;

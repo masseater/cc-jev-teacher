@@ -1,6 +1,3 @@
-// The teacher plugin carries its own copy of the files it shares with the pruner, because an
-// installed plugin can read only its own directory. The pruner's files are the originals:
-// `bun scripts/sync-shared.ts` copies them over, and `--check` fails when a copy differs.
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 

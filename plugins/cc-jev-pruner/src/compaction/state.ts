@@ -12,7 +12,6 @@ import { estimateTokens } from "../tokens.ts";
 export const STATE_CONTEXT =
   "A coding assistant conversation is being compacted to free context. `history` is the whole conversation so far, oldest first; tool outputs are replaced by a short `result` note and long texts may be abridged. Each question asks whether one tool call, or the full output of that call, still needs to stay in the history verbatim. Whatever is not kept is deleted permanently, but the assistant can always re-run a tool or re-read a file.";
 
-/** Successive caps on the serialised tool input included per call. */
 const INPUT_CHARS = [1000, 200, 60] as const;
 const TEXT_HEAD = 400;
 const TEXT_TAIL = 150;
@@ -31,10 +30,6 @@ export function isPinned(index: number, total: number, preserveRecentMessages: n
   return index === 0 || index >= total - preserveRecentMessages;
 }
 
-/**
- * Pairs every tool_use with its tool_result by `tool_use_id`. Calls without a
- * result are not candidates (there is nothing to drop yet).
- */
 export function collectToolCalls(
   messages: readonly Message[],
   preserveRecentMessages: number,
@@ -82,7 +77,6 @@ function resultNote(call: ToolCall): string {
   return `${call.isError ? "error" : "ok"}, ${call.resultChars} chars (omitted)`;
 }
 
-/** One call as a single line, for when the structured form is too costly. */
 function compactCall(call: ToolCall): string {
   const input = Object.entries(call.input)
     .map(([key, value]) => {
@@ -95,10 +89,6 @@ function compactCall(call: ToolCall): string {
   } ${call.resultChars}ch`;
 }
 
-/**
- * Folds runs of adjacent call-only entries into one entry each, so the
- * per-entry envelope is paid once per run; the call lines keep their ids.
- */
 function mergeCallRuns(
   history: readonly HistoryEntry[],
   pinned: (e: HistoryEntry) => boolean,
@@ -152,7 +142,6 @@ function historyEntries(
   return entries;
 }
 
-/** The last three user prompts, as the default `goal`. */
 export function goalFromMessages(messages: readonly Message[]): string {
   return messages
     .filter(
@@ -166,14 +155,6 @@ export function goalFromMessages(messages: readonly Message[]): string {
     .join("\n");
 }
 
-/**
- * Builds the Jev state from the whole conversation and shrinks it in stages
- * until it fits `maxStateTokens`: tool inputs are truncated, then long texts
- * are abridged oldest-first (pinned messages last), then old messages collapse
- * to a one-line note, then old tool calls shrink to one line each, then old
- * messages that carry no call are left out, then runs of old call-only
- * messages are folded into one entry. Throws when even that is too big.
- */
 export function fitState(
   messages: readonly Message[],
   calls: readonly ToolCall[],

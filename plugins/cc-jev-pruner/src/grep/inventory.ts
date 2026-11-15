@@ -5,20 +5,17 @@ export type InventoryInput = {
   policy?: FilesystemPolicy;
   signal: AbortSignal;
   protectedPaths?: string[];
-  /** Matches the entry bound search discovery applies in retrieve.ts. */
   maxEntries?: number;
 };
 export type Inventory = {
   status: "complete" | "incomplete" | "interrupted";
   files: number;
   bytes: number;
-  /** Eligible files grouped by top-level directory; "." holds files directly under the root. */
   directories: Array<{ path: string; files: number; bytes: number }>;
   excluded: Record<string, number>;
   issues: Array<{ kind: string; count: number }>;
 };
 
-/** Walk every eligible path; only ignore rules are read, never source content, and no provider is contacted. */
 export async function inventory(input: InventoryInput): Promise<Inventory> {
   const maxEntries = input.maxEntries ?? 100_000;
   const reader = await createFilesystem({
