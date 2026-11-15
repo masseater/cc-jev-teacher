@@ -1,4 +1,3 @@
-// Rendering only; all offsets refer to the original UTF-8 source, never normalized text.
 export function preview({ text, budget }, matches) {
   if (!Number.isSafeInteger(budget) || budget < 256)
     throw new Error("Preview allowance must be at least 256 bytes");

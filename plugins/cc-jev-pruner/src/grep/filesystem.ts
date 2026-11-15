@@ -5,13 +5,11 @@ import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import ignore, { type Ignore } from "ignore";
 import { storageDirectory } from "./storage.ts";
 
-/** These independent switches broaden only their named exclusion category. */
 export type FilesystemPolicy = {
   hidden?: boolean;
   noIgnore?: boolean;
   includeDependencies?: boolean;
   includeSensitive?: boolean;
-  /** Root-relative gitignore patterns that only narrow eligibility; repository rules cannot re-admit them. */
   exclude?: readonly string[];
 };
 export type Snapshot = Readonly<{ path: string; contentHash: string; source: string }>;
@@ -25,13 +23,11 @@ export type SnapshotResult = { status: "ok"; snapshot: Snapshot } | Excluded | I
 export type DirectoryEntry = { path: string; kind: "file" | "directory"; bytes?: number };
 export type DirectoryPage = {
   entries: DirectoryEntry[];
-  /** Per-reason counts of entries this page skipped; a skipped directory counts once. */
   excluded: Record<string, number>;
   nextCursor?: string;
   issues: FilesystemIssue[];
 };
 
-/** Exact default name policy. Dot paths require hidden independently of the other switches. */
 export const filesystemDefaults = Object.freeze({
   dependencyDirectories: [
     "node_modules",
@@ -71,7 +67,6 @@ export const filesystemDefaults = Object.freeze({
 export type FilesystemOptions = {
   root: string;
   policy?: FilesystemPolicy;
-  /** Additional absolute credential/cache locations. Always excluded. */
   protectedPaths?: readonly string[];
   limits?: Partial<
     Pick<
@@ -124,7 +119,6 @@ function isSensitive(name: string) {
   );
 }
 
-/** One invocation-scoped owner for eligibility, metadata reads, enumeration and content snapshots. */
 export async function createFilesystem(options: FilesystemOptions) {
   const root = await realpath(resolve(options.root));
   const rootStat = await lstat(root, { bigint: true });
@@ -176,7 +170,6 @@ export async function createFilesystem(options: FilesystemOptions) {
   async function stable(identity: Eligible) {
     for (const ancestor of identity.ancestors) {
       const current = await lstat(ancestor.path, { bigint: true });
-      // Child modifications legitimately change a directory's timestamps; its identity must stay fixed.
       if (
         !current.isDirectory() ||
         current.dev !== ancestor.stat.dev ||
@@ -198,7 +191,6 @@ export async function createFilesystem(options: FilesystemOptions) {
     if (identity.stat.size > BigInt(ceiling)) return issue("resource_limit", identity.path);
     let handle;
     try {
-      // NONBLOCK prevents a concurrent replacement with a FIFO from hanging the process.
       handle = await open(
         identity.absolute,
         constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0),
@@ -226,7 +218,6 @@ export async function createFilesystem(options: FilesystemOptions) {
       await handle?.close();
     }
   }
-  // Search-local reuse; eviction only requires reparsing, never changes eligibility.
   const ruleCache = new Map<string, { stat: BigIntStats; rules: Ignore }>();
   async function ruleFile(directory: string, name: string): Promise<Ignore | Issue | undefined> {
     const absolute = join(directory, name);
@@ -392,7 +383,6 @@ export async function createFilesystem(options: FilesystemOptions) {
     cursors.delete(token);
     if (cursor) await cursor.handle.close();
   }
-  /** Consume a cursor serially; closeCursor releases a deliberately pruned directory without draining it. */
   async function listPage(path = ".", token?: string): Promise<DirectoryPage> {
     const entries: DirectoryEntry[] = [];
     const excluded: Record<string, number> = {};

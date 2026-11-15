@@ -17,7 +17,6 @@ export type CacheInput = {
 export type CacheAnswers = Record<string, number>;
 export type CacheIssue = "cache_unavailable" | "cache_corrupt" | "cache_limit";
 export type CacheOptions = {
-  /** Caller supplies the storage location; this directory contains only Jevgrep cache data. */
   directory: string;
   enabled?: boolean;
   ttlMs?: number;
@@ -40,7 +39,6 @@ function missing(error: unknown) {
   return (error as NodeJS.ErrnoException).code === "ENOENT";
 }
 
-/** Answer-only, best-effort storage; the evaluator must validate success before calling put. */
 export function createEvaluationCache(options: CacheOptions) {
   const directory = resolve(options.directory);
   const entries = join(directory, "entries");
@@ -63,7 +61,6 @@ export function createEvaluationCache(options: CacheOptions) {
     issues.set(kind, (issues.get(kind) ?? 0) + 1);
   }
   function key(input: CacheInput) {
-    // Preserve request/question ordering. Only this digest, never the serialized request, reaches disk.
     return createHash("sha256")
       .update(JSON.stringify([schema, input.namespace, input.request]))
       .digest("hex");
@@ -156,7 +153,6 @@ export function createEvaluationCache(options: CacheOptions) {
     }
   }
   async function trim() {
-    // Streaming retention bounds memory even with many tiny entries. Eviction is deliberately not LRU.
     let retainedBytes = 0;
     const scan = await opendir(entries);
     for await (const entry of scan) {
@@ -166,7 +162,6 @@ export function createEvaluationCache(options: CacheOptions) {
         const info = await lstat(path);
         if (!info.isFile() || info.isSymbolicLink()) continue;
         if (pendingName.test(entry.name)) {
-          // Abandoned publications after a crash must not accumulate forever; current writes get an hour.
           if (Date.now() - info.mtimeMs > 60 * 60 * 1000) await remove(path);
           continue;
         }
@@ -235,7 +230,6 @@ export function createEvaluationCache(options: CacheOptions) {
     }
   }
   async function clear(): Promise<void> {
-    // Detach the current generation atomically. Later writers create a new one; no global lock or pause.
     const detached = join(directory, `.cleared-${randomUUID()}`);
     try {
       await checkDirectory(directory, false);

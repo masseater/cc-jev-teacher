@@ -43,11 +43,9 @@ const logRequest = (model: string, body: string) => {
 
 export type Checks = Record<string, { question: NoulQuestion; reason: string; wholeFile?: true }>;
 
-// The System One calls of one hook run, sent on behalf of the session in its input.
 export const jevFor = (input: { session_id: string }) => {
   const backend = backendFor(input.session_id);
 
-  // Sends one System One request to the configured backend.
   const systemOne = <const Q extends Questions>(request: SystemOneRequest<Q>) => {
     const { apiKey, baseURL, model, extra, headers } = backend;
     const body: SystemOneRequest<Q> = {
@@ -66,7 +64,6 @@ export const jevFor = (input: { session_id: string }) => {
     }).systemOne(body);
   };
 
-  // Asks Jev every question in one request and returns the probability of yes for each key.
   const noulsOf = async (
     state: NonNullable<EntryType>,
     questions: Record<string, NoulQuestion>,
@@ -75,14 +72,12 @@ export const jevFor = (input: { session_id: string }) => {
     return Object.keys(questions).map((key) => ({ key, noul: answers[key]?.noul ?? 0 }));
   };
 
-  // Asks Jev every question in one request and returns the keys answered yes.
   const yesKeysOf = async (
     state: NonNullable<EntryType>,
     questions: Record<string, NoulQuestion>,
   ) =>
     (await noulsOf(state, questions)).filter(({ noul }) => noul >= THRESHOLD).map(({ key }) => key);
 
-  // Asks Jev every check in one request and returns the reasons of the checks that fail, as list items.
   const failedOf = async (state: NonNullable<EntryType>, checks: Checks) => {
     const failed = await yesKeysOf(
       state,

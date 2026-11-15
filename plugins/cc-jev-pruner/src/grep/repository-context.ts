@@ -2,7 +2,6 @@ import { dirname } from "node:path";
 import type { FilesystemReader } from "./filesystem.ts";
 import type { FileEvidence } from "./types.ts";
 
-/** Locate scoped repository guidance without executing it. */
 export async function repositoryContext(reader: FilesystemReader, files: FileEvidence[]) {
   const directories = new Set(["."]);
   for (const file of files)

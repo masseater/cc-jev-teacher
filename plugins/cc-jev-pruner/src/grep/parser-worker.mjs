@@ -1,5 +1,4 @@
 import { execute } from "./parser-helpers.mjs";
-// A serial queue also covers asynchronous grammar initialization.
 let queue = Promise.resolve();
 process.on("message", ({ id, helper, input }) => {
   queue = queue.then(async () => {

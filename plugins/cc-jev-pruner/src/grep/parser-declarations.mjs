@@ -25,7 +25,6 @@ export function declarations(root, language) {
         const owner = receiver && field(receiver, "type")?.text.replace(/^\*/, "");
         if (owner) name = `${owner}.${name}`;
       } else if (["type_declaration", "var_declaration", "const_declaration"].includes(node.type)) {
-        // Keep groups intact: iota and omitted constant values depend on earlier specs.
         const specs = node.namedChildren.flatMap((child) =>
           child.type === "var_spec_list" ? child.namedChildren : [child],
         );

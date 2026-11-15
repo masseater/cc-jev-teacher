@@ -26,7 +26,6 @@ const checks: Checks = {
   },
 };
 
-// The history fitted into Jev's limit. When even the most compact form is too large, the oldest messages are dropped a tenth at a time.
 const historyOf = (messages: Array<Message>) => {
   const step = Math.ceil(messages.length / 10);
   for (let start = 0; ; start += step) {
@@ -55,7 +54,6 @@ const hook = defineHook({
     const turn = entriesOf(input.transcript_path);
     if (!toolUsesOf(turn).some((use) => CHANGING_TOOLS.has(use.name ?? "")))
       return context.success();
-    // Each reason is given at most once per turn.
     const given = stopFeedbackOf(turn);
     const pending: Checks = Object.fromEntries(
       Object.entries(checks).filter(([, check]) => !given.includes(check.reason)),

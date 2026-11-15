@@ -1,9 +1,5 @@
 export type Role = "user" | "assistant";
 
-/**
- * A tool_use block of an assistant message. `text` and `isError` mirror the
- * outcome once the transcript holds it (Claude Code attaches them).
- */
 export interface ToolUse {
   tool_use_id: string;
   tool: string;
@@ -12,17 +8,12 @@ export interface ToolUse {
   isError?: boolean;
 }
 
-/** A tool_result block of a user message. */
 export interface ToolResult {
   tool_use_id: string;
   text: string;
   isError?: boolean;
 }
 
-/**
- * One transcript message. The shape is a subset of Claude Code's
- * `SessionMessage`, so a session transcript can be passed in as is.
- */
 export interface Message {
   role: Role;
   text: string;
@@ -30,27 +21,20 @@ export interface Message {
   toolResults?: ToolResult[];
 }
 
-/** A tool call paired with its result by `tool_use_id`. */
 export interface ToolCall {
-  /** Short id used in the Jev state and question names (`t1`, `t2`, ...). */
   id: string;
   tool_use_id: string;
   tool: string;
   input: Record<string, unknown>;
-  /** Index of the message holding the tool_use block. */
   callIndex: number;
-  /** Index of the message holding the tool_result block. */
   resultIndex: number;
   resultChars: number;
   isError: boolean;
-  /** In the first or the newest preserved messages; never a candidate. */
   pinned: boolean;
 }
 
 export interface CallAnswer {
-  /** Jev's probability that the call itself still matters. */
   keepCall: number;
-  /** Jev's probability that the full result still needs to stay verbatim. */
   keepResult: number;
 }
 
@@ -74,11 +58,9 @@ export interface HistoryEntry {
   i: number;
   role: Role;
   text: string;
-  /** Structured per call, or one compact line per call once the state has to shrink. */
   tool_calls?: HistoryToolCall[] | string[];
 }
 
-/** The state sent with every Jev request: the whole history, results omitted. */
 export interface CompactionState {
   context: string;
   goal: string;
@@ -88,22 +70,15 @@ export interface CompactionState {
 export interface FittedState {
   state: CompactionState;
   tokens: number;
-  /** Which fitting stage produced the state, for diagnostics. */
   stage: string;
 }
 
 export interface CompactOptions {
-  /** Ongoing task description; defaults to the last few user prompts. */
   goal?: string;
-  /** Minimum keep probability for a call or result to stay. Default 0.5. */
   keepThreshold?: number;
-  /** Newest messages never touched (the first message is always kept). Default 6. */
   preserveRecentMessages?: number;
-  /** Estimated token ceiling for the state. Default 25000. */
   maxStateTokens?: number;
-  /** Estimated token ceiling for state plus one batch of questions. Default 30000. */
   maxRequestTokens?: number;
-  /** Characters of a dropped tool result to retain. Default 300. */
   truncateHeadChars?: number;
 }
 
@@ -117,7 +92,6 @@ export interface ResolvedCompactOptions {
 }
 
 export interface CompactResult {
-  /** The compacted transcript; untouched messages are the input objects. */
   messages: Message[];
   decisions: CallDecision[];
   stats: {
@@ -131,7 +105,6 @@ export interface CompactResult {
     callsDropped: number;
     pinned: number;
     stateTokens: number;
-    /** Which fitting stage the state needed, '' when no request was made. */
     stateStage: string;
     requests: number;
     ms: number;

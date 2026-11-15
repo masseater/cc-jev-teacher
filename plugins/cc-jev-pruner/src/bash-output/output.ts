@@ -40,19 +40,12 @@ export type TrimDecision =
 export interface TrimOutputOptions {
   minTokens?: number;
   chunkLines?: number;
-  /** Optional character target instead of line grouping; 0 uses chunkLines. */
   chunkChars?: number;
   onDecision?: (reason: TrimDecision) => void;
   keepThreshold?: number;
   maxStateTokens?: number;
-  /**
-   * Cap on rendered pruned output, including markers. If errors or unscored
-   * content cannot fit safely, return the original output. 0 means no cap.
-   */
   maxChars?: number;
-  /** Maximum additional Jev requests, including refinement and retries. */
   maxScoringRequests?: number;
-  /** Short omission markers and one recovery footer, included in maxChars. */
   compactMarkers?: boolean;
 }
 
@@ -95,7 +88,6 @@ export function exceedsOutputThreshold(output: string, minTokens?: number): bool
   return estimateTokens(output) > Math.max(MIN_OUTPUT_TOKENS, finite(minTokens, MIN_OUTPUT_TOKENS));
 }
 
-/** Output with NULs or a lot of control bytes is not text worth chunking. */
 export function looksBinary(output: string): boolean {
   if (output.includes("\u0000")) return true;
   const sample = output.slice(0, 4_000);
@@ -107,20 +99,13 @@ export function looksBinary(output: string): boolean {
   return control > sample.length * 0.05;
 }
 
-/**
- * Output the agent is likely to parse as one document (a file dump, a diff, a
- * JSON blob). Cutting a hole in it leaves something that still looks complete
- * but is not, so it is left alone.
- */
 export function looksStructured(command: string, output: string): boolean {
   const head = output.trimStart();
   if (head.startsWith("{") || head.startsWith("[")) {
     try {
       JSON.parse(output);
       return true;
-    } catch {
-      /* not JSON after all */
-    }
+    } catch {}
   }
   if (head.startsWith("<?xml") || head.startsWith("<!DOCTYPE") || head.startsWith("---\n"))
     return true;
@@ -159,7 +144,6 @@ export function classifyOutput(command: string, output: string): OutputCategory 
   return "unknown";
 }
 
-/** Splits over-long lines so one line cannot become an untrimmable chunk. */
 function splitLongLines(output: string): string[] {
   const out: string[] = [];
   for (const line of output.split("\n")) {
@@ -323,7 +307,6 @@ function minimumRetainedChars(
       count += 1;
     }
   });
-  // Omissions can be cheaper to retain than to mark, so markers are not a lower bound.
   return (
     chars +
     Math.max(0, count - 1) +
@@ -659,12 +642,6 @@ function renderOutput(
 const REFINE_GROUP_LINES = 5;
 const DEFAULT_MAX_SCORING_REQUESTS = 40;
 
-/**
- * Asks Jev, line group by line group, what to keep inside one oversized chunk —
- * the same noul question as the chunk pass, over the same state, so the last
- * decision uses task context. Diagnostics and results survive every score.
- * Incomplete or failed scoring preserves the original chunk.
- */
 async function shrinkChunkWithJev(
   chunk: OutputChunk,
   input: TrimOutputInput,

@@ -6,13 +6,11 @@ import { typescriptDeclarations } from "./parser-typescript.mjs";
 let initialized;
 const languages = new Map();
 async function parse(source, action, languageName = "python") {
-  // Retrieval coordinates count LF lines; normalizing bare CR would mislabel original bytes.
   if (languageName === "python" && /\r(?!\n)/.test(source)) return null;
   await (initialized ??= Parser.init());
   if (!languages.has(languageName))
     languages.set(
       languageName,
-      // The grammars come from the exact-version official packages in the plugin's dependencies.
       await Language.load(
         createRequire(import.meta.url).resolve(
           `tree-sitter-${languageName}/tree-sitter-${languageName}.wasm`,
@@ -51,11 +49,8 @@ function* walk(root) {
     for (const c of n.namedChildren.toReversed()) stack.push(c);
   }
 }
-// Tree-sitter deliberately recognizes some Python 2 syntax. Reject those forms, but
-// accept modern Python syntax: this is structural recognition, not ast.compile validation.
 let syntaxChecks;
 function validPython(root) {
-  // Let the native query engine skip nodes that cannot affect this compatibility policy.
   syntaxChecks ??= new Query(
     languages.get("python"),
     `[
@@ -108,7 +103,6 @@ function validPython(root) {
   }
   return true;
 }
-// Python AST ends exclude trailing comments. Tree-sitter includes them in blocks.
 function endLine(n) {
   let last = n;
   while (last.children.length) {
@@ -270,7 +264,6 @@ function calls(root, source, ranges) {
   for (const [key, n] of classes) {
     const defs = body(n).filter((c) => definition(c)?.type === "function_definition");
     methods.set(key, uniqueDefinitions(defs));
-    // Only bare identifiers can resolve to local classes. Other bases remain explicitly unknown.
     bases.set(
       key,
       (field(n, "superclasses")?.namedChildren ?? [])
@@ -332,7 +325,6 @@ function calls(root, source, ranges) {
       )
         continue;
       const nodes = bodyNodes(fn);
-      // Conservatively suppress leads whenever this scope writes self, including destructuring.
       if (
         nodes.some(
           (n) =>

@@ -19,7 +19,6 @@ function stop(owner: Runtime, error: Error, cancellation = false) {
   for (const request of owner.pending.values()) {
     request.cleanup();
     if (cancellation && !request.signal?.aborted) {
-      // Helpers have no side effects; unrelated requests can survive a cancelled worker.
       runParser(request.helper, request.input, request.signal).then(
         request.resolve,
         request.reject,
@@ -38,7 +37,6 @@ function start(): Runtime {
     }),
     pending: new Map(),
   };
-  // Runtime loader diagnostics must not bypass the CLI output contract.
   owner.worker.on("message", (message: { id: number; result?: unknown; error?: string }) => {
     const request = owner.pending.get(message.id);
     if (!request) return;
@@ -60,7 +58,6 @@ function start(): Runtime {
   return owner;
 }
 
-/** One serialized parser worker; idle workers never keep a CLI alive. Cancellation discards its state. */
 export function runParser<T>(
   helper: Helper,
   input: string,

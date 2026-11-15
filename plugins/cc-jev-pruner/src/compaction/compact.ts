@@ -24,7 +24,6 @@ export const DEFAULT_OPTIONS: ResolvedCompactOptions = {
   truncateHeadChars: 300,
 };
 
-/** Tokens the request envelope (`model`, key names) adds around state and questions. */
 const REQUEST_OVERHEAD_TOKENS = 20;
 
 function finite(value: number | undefined, fallback: number): number {
@@ -51,7 +50,6 @@ export function resolveOptions(options: CompactOptions = {}): ResolvedCompactOpt
   };
 }
 
-/** The two `noul` questions asked about one call: keep the call, keep its result. */
 export function questionsFor(call: ToolCall): Questions {
   return {
     [`call_${call.id}`]: {
@@ -65,10 +63,6 @@ export function questionsFor(call: ToolCall): Questions {
   };
 }
 
-/**
- * Splits the candidate calls into batches whose questions, together with the
- * (always complete) state, fit one request.
- */
 export function batchCalls(
   calls: readonly ToolCall[],
   stateTokens: number,
@@ -139,12 +133,6 @@ function truncatedResultText(text: string, isError: boolean, headChars: number):
   }; re-run the tool if needed]`;
 }
 
-/**
- * Rebuilds the conversation from the decisions. A dropped call disappears
- * together with its result; a dropped result keeps a bounded head and note.
- * Messages that lose all their content are removed; untouched messages are
- * returned as the same objects they came in as.
- */
 export function applyDecisions(
   messages: readonly Message[],
   decisions: readonly CallDecision[],
@@ -215,7 +203,6 @@ export function applyDecisions(
   return kept;
 }
 
-/** Characters of text, tool input and tool output a message holds. */
 export function messageChars(message: Message): number {
   let total = message.text.length;
   for (const tool of message.toolUses) {
@@ -238,13 +225,6 @@ function count(decisions: readonly CallDecision[], reason: CallDecision["reason"
   return decisions.filter((decision) => decision.reason === reason).length;
 }
 
-/**
- * Compacts a transcript by asking Jev, for every tool call outside the pinned
- * first and newest messages, whether the call and whether its result must
- * stay. The whole history (results omitted, fitted into `maxStateTokens`) is
- * sent as state with every batch of questions. Throws when Jev fails or the
- * history cannot be fitted; the caller decides whether to fall back.
- */
 export async function compact(
   messages: readonly Message[],
   asker: JevAsker,

@@ -12,7 +12,6 @@ function quote(value: string): string {
 export const DEFAULT_MAX_SOURCE_BYTES = 0;
 export const DEFAULT_MAX_OUTPUT_BYTES = 256_000;
 
-/** Present source before detailed reading leads so truncated output remains useful. */
 export function renderResult(
   result: RetrievalResult,
   maxSourceBytes = DEFAULT_MAX_SOURCE_BYTES,
@@ -141,7 +140,6 @@ function size(bytes: number): string {
   return `${value.toFixed(1)} ${units[unit]}`;
 }
 
-/** Counts only; listing every eligible path would flood stdout on real repositories. */
 export function renderInventory(inventory: Inventory, maxDirectories = 20): string {
   const count = (value: number) => value.toLocaleString("en-US");
   const files = (value: number) => `${count(value)} ${value === 1 ? "file" : "files"}`;

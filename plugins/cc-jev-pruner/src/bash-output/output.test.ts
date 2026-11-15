@@ -461,8 +461,6 @@ describe("budget ordering", () => {
         ? "item-4821 qty=13 bin=Z9 serial=SN-88431-XQ status=quarantined"
         : `INFO request ${i} served in ${i % 400}ms`,
     ).join("\n");
-    // Only the needle's chunk scores high; the first and last chunks alone are
-    // larger than the budget, which used to force every other chunk out.
     const asker = {
       ask: async (_state: unknown, questions: Record<string, unknown>) => ({
         answers: Object.fromEntries(

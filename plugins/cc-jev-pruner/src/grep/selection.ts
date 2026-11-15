@@ -35,7 +35,6 @@ function mergeSpans(spans: Span[]): Span[] {
   return merged;
 }
 
-/** The bounded follow-up expands prior context once more; positive selections retain separate provenance. */
 export async function selectFile(
   snapshot: Snapshot,
   query: string,
@@ -98,7 +97,6 @@ export async function selectFile(
     signal,
     maxUnitBytes: giantLine ? sourceUnitBytes : Math.max(sourceUnitBytes, bytes.length),
   });
-  // Giant lines retain byte coordinates; ordinary fallback uses complete-source line fragments.
   let units = syntax.units;
   if (!giantLine && (syntax.mode === "text" || units.every((unit) => unit.partial))) {
     units = splitSource(snapshot, 3000).map((unit) => ({
@@ -178,7 +176,6 @@ export async function selectFile(
       const oversizedContext = [...lines.slice(0, 20), ...lines.slice(first - 1, last)].some(
         (line) => Buffer.byteLength(line) > sourceUnitBytes,
       );
-      // Line-only windows cannot describe a partial giant line; send only the parser's bounded byte spans.
       const context =
         group.some(partialLine) || oversizedContext
           ? group
@@ -197,7 +194,6 @@ export async function selectFile(
         group.map((unit) => ({ name: unit.name, ...unit.range })),
         prepared.evidence,
       );
-      // Shared evidence contributes to the state limit as well as local source.
       if (group.length > 1 && Buffer.byteLength(JSON.stringify(request.state)) > 80_000) {
         const middle = Math.ceil(group.length / 2);
         groups.splice(groupIndex, 1, group.slice(0, middle), group.slice(middle));
@@ -226,8 +222,6 @@ export async function selectFile(
           range: rangeForSpan(decisionSpan),
           score: value,
         });
-        // Only a valid contextual rejection retracts an earlier selection.
-        // Failed or unprocessed groups retain their previous source spans.
         if (prepared.evidence !== undefined && value <= 0.5) {
           const start = unit.sourceByteStart,
             end = unit.sourceByteEnd;
@@ -316,7 +310,6 @@ export async function selectFile(
       for (let line = window.startLine; line <= window.endLine; line++) {
         const start = offsets[line - 1]!,
           end = offsets[line]!;
-        // An adjacent selected declaration must not accidentally include an unselected giant line.
         if (end - start > sourceUnitBytes) {
           rendered.push({ start: segmentStart, end: start });
           for (const span of chosen)
@@ -330,7 +323,6 @@ export async function selectFile(
     const output = mergeSpans(rendered);
     function renderedRange(span: Span): EvidenceRange {
       const range = rangeForSpan(span);
-      // A trailing empty line has no byte interval, but remains part of a line-based window.
       if (
         range.sourceByteStart === undefined &&
         span.end === bytes.length &&
@@ -357,7 +349,6 @@ export async function selectFile(
     };
   }
   const expanded = excerptsFor([...wholeRanges, ...neighborhood], rendered);
-  // Presentation can be stricter without narrowing evidence sent to Jev.
   const displayed = mergeSpans(
     [...sourceDecisions.values()]
       .filter((decision) => decision.score > sourceConfidenceBoundary)

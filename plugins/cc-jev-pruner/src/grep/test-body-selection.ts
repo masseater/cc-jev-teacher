@@ -10,7 +10,6 @@ const guidance =
 const contains = (outer: Range, inner: Range) =>
   outer.startLine <= inner.startLine && outer.endLine >= inner.endLine;
 
-/** Optional presentation pass; caller validates every input snapshot before applying results. */
 export async function selectTestBodies(
   query: string,
   inputs: Input[],
@@ -87,7 +86,6 @@ export async function selectTestBodies(
       decisions.push({ candidate: batch[i]!, keep: score > 0.5 });
     }
   }
-  // An uninformative all-negative optional pass keeps the existing presentation.
   if (!decisions.some((d) => d.keep)) return [];
   const changes: Array<{
     file: FileEvidence;
