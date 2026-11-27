@@ -7,7 +7,7 @@
       "dependencies": {
         "@typesafe-ai/sdk": "0.7.0",
         "cc-hooks-ts": "2.1.281",
-        "textlint-rule-ux-writing-dead-cliche": "^0.18.0",
+        "textlint-rule-ux-writing-dead-cliche": "^0.21.0",
         "valibot": "1.5.0",
       },
     },
@@ -219,7 +219,7 @@
 
     "statuses": ["statuses@2.0.2", "", {}, "sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw=="],
 
-    "textlint-rule-ux-writing-dead-cliche": ["textlint-rule-ux-writing-dead-cliche@0.18.0", "", { "dependencies": { "js-yaml": "^4.1.0" }, "bin": { "dead-cliche": "src/cli.mjs" } }, "sha512-IyKjM/44dToutUa0pY9pod1FtLhd+hxsHFD8UlATrYr7n5vkByyjKHABhpaMDWHNI0Sj77ar07ZtmkY1PxqmNQ=="],
+    "textlint-rule-ux-writing-dead-cliche": ["textlint-rule-ux-writing-dead-cliche@0.21.0", "", { "dependencies": { "js-yaml": "^4.1.0" }, "bin": { "dead-cliche": "src/cli.mjs" } }, "sha512-qHbZs7BcDEyeZIfCz3rExUDyDoxhUkggFZu9qMhSOSRR1K324jav0qFRzkNTO5u0ssbj6PApgFVKb/nnayt05A=="],
 
     "toidentifier": ["toidentifier@1.0.1", "", {}, "sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA=="],
 
