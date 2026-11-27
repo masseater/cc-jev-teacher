@@ -10,7 +10,7 @@
     "@typesafe-ai/sdk": "0.7.0",
     "cc-hooks-ts": "2.1.281",
     "ignore": "7.0.17",
-    "textlint-rule-ux-writing-dead-cliche": "^0.21.0",
+    "textlint-rule-ux-writing-dead-cliche": "^0.22.0",
     "tree-sitter-go": "0.25.0",
     "tree-sitter-python": "0.25.0",
     "tree-sitter-rust": "0.24.0",
